@@ -1,0 +1,14 @@
+prefix=/home/angzangy/ffmpeg_src/android/arm_static
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: libavcodec
+Description: FFmpeg codec library
+Version: 55.62.100
+Requires: libswresample >= 0.19.100, libavutil >= 52.83.100
+Requires.private: 
+Conflicts:
+Libs: -L${libdir}  -lavcodec -lm -lz -pthread
+Libs.private: 
+Cflags: -I${includedir}

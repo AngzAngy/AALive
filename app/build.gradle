@@ -10,11 +10,15 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-        externalNativeBuild {
-            cmake {
-                cppFlags "-frtti -fexceptions"
-            }
-        }
+//        externalNativeBuild {
+//            cmake {
+//                arguments "-DANDROID_TOOLCHAIN=gcc"
+//                cppFlags " -frtti -fexceptions"
+//            }
+//        }
+//        ndk{
+//            abiFilters "armeabi-v7a"
+//        }
     }
     buildTypes {
         release {
@@ -22,9 +26,14 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-    externalNativeBuild {
-        cmake {
-            path "CMakeLists.txt"
+//    externalNativeBuild {
+//        cmake {
+//            path "CMakeLists.txt"
+//        }
+//    }
+    sourceSets {
+        main {
+            jni.srcDirs = []
         }
     }
 }
