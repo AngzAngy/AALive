@@ -10,8 +10,8 @@ extern "C" {
 #include <libavutil/samplefmt.h>
 #include <libswscale/swscale.h>
 }
-#ifndef __KW_H264_ENCODER_H
-#define __KW_H264_ENCODER_H
+#ifndef __AA_H264_ENCODER_H
+#define __AA_H264_ENCODER_H
 
 class H264Encoder {
 public:

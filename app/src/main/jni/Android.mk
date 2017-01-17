@@ -51,7 +51,7 @@ LOCAL_CPPFLAGS :=  -std=gnu++11
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/ffmpeg/include
 
 
-LOCAL_SRC_FILES := H264Encoder.cpp
+LOCAL_SRC_FILES := H264Encoder.cpp AACEncoder.cpp
 
 LOCAL_LDLIBS := -llog  -landroid -lz -lGLESv2 -lOpenSLES
 
