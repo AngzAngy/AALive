@@ -46,12 +46,16 @@ LOCAL_MODULE := aalive
 
 LOCAL_DISABLE_FATAL_LINKER_WARNINGS := true
 LOCAL_CFLAGS := -D__STDC_CONSTANT_MACROS -D_ANDROID_
-LOCAL_CPPFLAGS :=  -std=gnu++11
+LOCAL_CPPFLAGS :=  -std=gnu++11 -fexceptions -frtti
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/ffmpeg/include
 
 
-LOCAL_SRC_FILES := H264Encoder.cpp AACEncoder.cpp
+LOCAL_SRC_FILES := Thread.cpp \
+                   H264Encoder.cpp \
+                   AACEncoder.cpp \
+                   LiveMuxerInfo.cpp \
+                   LiveMuxer.cpp \
 
 LOCAL_LDLIBS := -llog  -landroid -lz -lGLESv2 -lOpenSLES
 

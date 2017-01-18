@@ -36,6 +36,10 @@ public:
 		return mCodec;
 	}
 
+	AVCodecContext* getAVCodecContext(){
+		return mCodecContext;
+	}
+
 	bool encode(AVPacket *avpkt, const AVFrame *srcFrame);
 	void release();
 	bool init();
