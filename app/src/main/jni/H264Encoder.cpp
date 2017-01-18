@@ -56,6 +56,7 @@ H264Encoder::H264Encoder():
 	mDstHeight(0),
 	mBitrate(400000),
 	mSrcPixelFormat(AV_PIX_FMT_YUV420P),
+	mCodec(NULL),
 	mCodecContext(NULL),
 	mSwsContext(NULL),
 	mDstFrame(NULL){
@@ -69,19 +70,18 @@ bool H264Encoder::init(){
     if(NULL != mCodecContext){
         return true;
     }
-	AVCodec *codec = NULL;
 	uint8_t endcode[] = { 0, 0, 1, 0xb7 };
 
-	av_register_all();
-	avcodec_register_all();
-	/* find the mpeg1 video encoder */
-	codec = avcodec_find_encoder(AV_CODEC_ID_H264);
-	if (!codec) {
+//	av_register_all();
+//	avcodec_register_all();
+	/* find the video encoder */
+	mCodec = avcodec_find_encoder(AV_CODEC_ID_H264);
+	if (!mCodec) {
 		LOG_ERROR("%s Codec not found", __FUNCTION__);
 		return false;
 	}
 
-	mCodecContext = avcodec_alloc_context3(codec);
+	mCodecContext = avcodec_alloc_context3(mCodec);
 	if (!mCodecContext) {
 		LOG_ERROR("%s Could not allocate video codec context", __FUNCTION__);
 		return false;
@@ -109,7 +109,7 @@ bool H264Encoder::init(){
 	av_opt_set(mCodecContext->priv_data, "preset", "slow", 0);
 
 	/* open it */
-	if (avcodec_open2(mCodecContext, codec, NULL) < 0) {
+	if (avcodec_open2(mCodecContext, mCodec, NULL) < 0) {
 	    release();
 		LOG_ERROR("%s Could not open codec",__FUNCTION__);
 		return false;

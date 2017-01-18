@@ -38,6 +38,7 @@ AACEncoder::AACEncoder():
 	mChannelNumber(0),
 	mBytesPerSample(0),
 	mBitrate(0),
+	mCodec(NULL),
 	mCodecContext(NULL){
 }
 
@@ -50,18 +51,17 @@ bool AACEncoder::init(){
         return true;
     }
 
-	av_register_all();
-	avcodec_register_all();
+//	av_register_all();
+//	avcodec_register_all();
 
-	AVCodec *codec = NULL;
 	/* find the AAC encoder */
-	codec = avcodec_find_encoder(AV_CODEC_ID_AAC);
-	if (!codec) {
+	mCodec = avcodec_find_encoder(AV_CODEC_ID_AAC);
+	if (!mCodec) {
 		LOG_ERROR("%s AAC Codec not found", __FUNCTION__);
 		return false;
 	}
 
-	mCodecContext = avcodec_alloc_context3(codec);
+	mCodecContext = avcodec_alloc_context3(mCodec);
 	if (!mCodecContext) {
 		LOG_ERROR("%s Could not allocate audio codec context", __FUNCTION__);
 		return false;
@@ -72,7 +72,7 @@ bool AACEncoder::init(){
 
 	/* check that the encoder supports s16 pcm input */
 	mCodecContext->sample_fmt = AV_SAMPLE_FMT_S16;
-	if (!check_sample_fmt(codec, mCodecContext->sample_fmt)) {
+	if (!check_sample_fmt(mCodec, mCodecContext->sample_fmt)) {
 		release();
 
 		LOG_ERROR("%s Encoder does not support sample format %s",
@@ -81,7 +81,7 @@ bool AACEncoder::init(){
 	}
 
 	/* select other audio parameters supported by the encoder */
-	mCodecContext->sample_rate = select_sample_rate(codec, mSampleRate);
+	mCodecContext->sample_rate = select_sample_rate(mCodec, mSampleRate);
 	switch (mChannelNumber){
 	case 1:
 		mCodecContext->channel_layout = AV_CH_LAYOUT_MONO;
@@ -97,7 +97,7 @@ bool AACEncoder::init(){
 	mCodecContext->channels = av_get_channel_layout_nb_channels(mCodecContext->channel_layout);
 
 	/* open it */
-	if (avcodec_open2(mCodecContext, codec, NULL) < 0) {
+	if (avcodec_open2(mCodecContext, mCodec, NULL) < 0) {
 	    release();
 	    LOG_ERROR("%s Could not open aac codec", __FUNCTION__);
 		return false;

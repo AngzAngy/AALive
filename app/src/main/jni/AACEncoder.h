@@ -28,15 +28,19 @@ public:
 	void setBitrate(int biterate) {
 		mBitrate = biterate;
 	}
+	AVCodec *getAVCodec(){
+		return mCodec;
+	}
 	bool encode(AVPacket *avpkt, const AVFrame *srcFrame);
     void release();
 
+	bool init();
 private:
-    bool init();
 	int mSampleRate;
 	int mChannelNumber;
 	int mBytesPerSample;
 	int mBitrate;
+	AVCodec *mCodec;
 	AVCodecContext *mCodecContext;
 };
 

@@ -32,16 +32,21 @@ public:
 	void setSrcPixelFormat(AVPixelFormat pixelFormat) {
 		mSrcPixelFormat = pixelFormat;
 	}
+	AVCodec * getAVCodec(){
+		return mCodec;
+	}
+
 	bool encode(AVPacket *avpkt, const AVFrame *srcFrame);
 	void release();
-private:
 	bool init();
+private:
 	int mSrcWidth;
 	int mSrcHeight;
 	int mDstWidth;
 	int mDstHeight;
 	int mBitrate;
 	AVPixelFormat mSrcPixelFormat;
+	AVCodec *mCodec;
 	AVCodecContext *mCodecContext;
 	struct SwsContext *mSwsContext;
 	AVFrame *mDstFrame;
