@@ -1,5 +1,5 @@
-#ifndef FFMPEG_THREAD_H
-#define FFMPEG_THREAD_H
+#ifndef AA_THREAD_H
+#define AA_THREAD_H
 
 #include <pthread.h>
 
