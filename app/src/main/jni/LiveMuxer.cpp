@@ -8,23 +8,39 @@ static int decode_interrupt_cb(void *pMuxer) {
     return false;
 }
 
-static void aEncodeThreadCallback(void *pMuxer){
+void LiveMuxer::aEncodeThreadCallback(void *pMuxer){
     LiveMuxer *pLiveMuxer = (LiveMuxer*)pLiveMuxer;
     if(pLiveMuxer){
 
     }
 }
 
-static void vEncodeThreadCallback(void *pMuxer){
+void LiveMuxer::vEncodeThreadCallback(void *pMuxer){
+    static AVPacket pkt;
     LiveMuxer *pLiveMuxer = (LiveMuxer*)pLiveMuxer;
-    if(pLiveMuxer){
-
-    }
+//    if(pLiveMuxer){
+        av_init_packet(&pkt);
+        pkt.data = NULL;    // packet data will be allocated by the encoder
+        pkt.size = 0;
+        if(pLiveMuxer->encodeVideoFrame(&pkt)){
+            pLiveMuxer->writeMuxerFrame(&pkt, false);
+        }
+        av_packet_unref(&pkt);
+//    }
 }
 
 LiveMuxer::LiveMuxer():mFormatContext(NULL),
                        mAudioStream(NULL),
-                       mVideoStream(NULL){
+                       mVideoStream(NULL),
+                       mVideoWritePos(0),
+                       mVideoReadPos(0),
+                       mVideoFramesCount(0){
+    for(int i=0; i < 4; i++){
+        AVFrame *pFrame = allocVideoFrame();
+        if(pFrame) {
+            mVideoFrames.push_back(pFrame);
+        }
+    }
 }
 
 LiveMuxer::~LiveMuxer() {
@@ -182,4 +198,59 @@ bool LiveMuxer::writeMuxerFrame(AVPacket *pPacket, bool bIsAudio){
         return false;
     }
     return true;
+}
+
+AVFrame* LiveMuxer::allocVideoFrame(){
+    AVFrame *pFrame = av_frame_alloc();
+    if(pFrame){
+        pFrame->width = mMuxerInfo.videoSrcWidth;
+        pFrame->height = mMuxerInfo.videoSrcHeight;
+        pFrame->format = AV_PIX_FMT_RGBA;
+        av_frame_get_buffer(pFrame, 16);
+    }
+    return pFrame;
+}
+
+void LiveMuxer::queueVideoFrame(const char* rgbabuf, const int bufBytes){
+    mVideoFramesMutex.lock();
+    AVFrame *frame = mVideoFrames[mVideoWritePos];
+    try {
+        if (frame) {
+            memcpy(frame->data[0], rgbabuf, bufBytes);
+            mVideoWritePos = (++mVideoWritePos) % mVideoFrames.size();
+            mVideoFramesCount++;
+
+            mVideoFramesCondition.signal();
+        }
+    }catch (...){
+    }
+
+    mVideoFramesMutex.unlock();
+}
+
+bool LiveMuxer::encodeVideoFrame(AVPacket *avpkt){
+    bool ret = false;
+    mVideoFramesMutex.lock();
+
+    if(mVideoFramesCount <= 0){
+        mVideoFramesCondition.wait(mVideoFramesMutex);
+    }
+
+    try {
+        AVFrame *frame = mVideoFrames[mVideoReadPos];
+        mVideoReadPos = (++mVideoReadPos) % mVideoFrames.size();
+        mVideoFramesCount--;
+
+        ret = videoEncoder.encode(avpkt, frame);
+    }catch(...){
+
+    }
+
+    mVideoFramesMutex.unlock();
+
+    return ret;
+}
+
+void LiveMuxer::queueAudioFrame(){
+
 }

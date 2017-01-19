@@ -139,7 +139,7 @@ bool H264Encoder::init(){
         /* the image can be allocated by any means and av_image_alloc() is
         * just the most convenient way if av_malloc() is to be used */
         if (av_image_alloc(mDstFrame->data, mDstFrame->linesize,
-            mCodecContext->width, mCodecContext->height,mCodecContext->pix_fmt, 32) < 0) {
+            mCodecContext->width, mCodecContext->height,mCodecContext->pix_fmt, 16) < 0) {
 		    release();
 			LOG_ERROR("%s Could not allocate raw picture buffer",__FUNCTION__);
             return false;
