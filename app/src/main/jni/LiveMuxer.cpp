@@ -63,18 +63,18 @@ bool LiveMuxer::start() {
 
     if(!audioEncoder.init()){
         release();
-        LOG_ERROR("%s aencoder init err", __FUNCTION__);
+        LOGE("%s aencoder init err", __FUNCTION__);
         return false;
     }
     if(!videoEncoder.init()){
         release();
-        LOG_ERROR("%s vencoder init err", __FUNCTION__);
+        LOGE("%s vencoder init err", __FUNCTION__);
         return false;
     }
 
     if(avio_open(&avioContext, mMuxerInfo.muxerUri.c_str(), AVIO_FLAG_WRITE) < 0){
         release();
-        LOG_ERROR("%s io open error: %s", __FUNCTION__, mMuxerInfo.muxerUri.c_str());
+        LOGE("%s io open error: %s", __FUNCTION__, mMuxerInfo.muxerUri.c_str());
         return false;
     }
 
@@ -83,7 +83,7 @@ bool LiveMuxer::start() {
     if(avformat_alloc_output_context2(&mFormatContext, NULL,
                                    "flv", mMuxerInfo.muxerUri.c_str()) < 0){
         release();
-        LOG_ERROR("%s fmt alloc err: %s", __FUNCTION__, mMuxerInfo.muxerUri.c_str());
+        LOGE("%s fmt alloc err: %s", __FUNCTION__, mMuxerInfo.muxerUri.c_str());
         return false;
     }
     mFormatContext->interrupt_callback.callback = decode_interrupt_cb;
@@ -94,7 +94,7 @@ bool LiveMuxer::start() {
     mAudioStream = avformat_new_stream(mFormatContext, audioEncoder.getAVCodec());
     if(!mAudioStream){
         release();
-        LOG_ERROR("%s new astream err", __FUNCTION__);
+        LOGE("%s new astream err", __FUNCTION__);
         return false;
     }
     mAudioStream->time_base.den = mMuxerInfo.audioSampleRate;
@@ -107,7 +107,7 @@ bool LiveMuxer::start() {
     mVideoStream = avformat_new_stream(mFormatContext, videoEncoder.getAVCodec());
     if(!mVideoStream){
         release();
-        LOG_ERROR("%s new vstream err", __FUNCTION__);
+        LOGE("%s new vstream err", __FUNCTION__);
         return false;
     }
     mVideoStream->time_base.den = 1000;
@@ -119,7 +119,7 @@ bool LiveMuxer::start() {
 
     if(avformat_write_header(mFormatContext, NULL) < 0){
         release();
-        LOG_ERROR("%s write header err", __FUNCTION__);
+        LOGE("%s write header err", __FUNCTION__);
         return false;
     }
     ThreadCB aThreadCB;
@@ -159,7 +159,7 @@ void LiveMuxer::release() {
 bool LiveMuxer::writeMuxerFrame(AVPacket *pPacket, bool bIsAudio){
     AA::Lock lock(mMuxerMutex, true);
     if(!pPacket){
-        LOG_ERROR("%s muxer err pkt null", __FUNCTION__);
+        LOGE("%s muxer err pkt null", __FUNCTION__);
         return false;
     }
     if(bIsAudio) {
@@ -194,7 +194,7 @@ bool LiveMuxer::writeMuxerFrame(AVPacket *pPacket, bool bIsAudio){
         }
     }
     if(!mFormatContext || av_write_frame(mFormatContext, pPacket) < 0){
-        LOG_ERROR("%s muxer write frame err", __FUNCTION__);
+        LOGE("%s muxer write frame err", __FUNCTION__);
         return false;
     }
     return true;

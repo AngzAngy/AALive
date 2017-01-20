@@ -57,13 +57,13 @@ bool AACEncoder::init(){
 	/* find the AAC encoder */
 	mCodec = avcodec_find_encoder(AV_CODEC_ID_AAC);
 	if (!mCodec) {
-		LOG_ERROR("%s AAC Codec not found", __FUNCTION__);
+		LOGE("%s AAC Codec not found", __FUNCTION__);
 		return false;
 	}
 
 	mCodecContext = avcodec_alloc_context3(mCodec);
 	if (!mCodecContext) {
-		LOG_ERROR("%s Could not allocate audio codec context", __FUNCTION__);
+		LOGE("%s Could not allocate audio codec context", __FUNCTION__);
 		return false;
 	}
 
@@ -75,7 +75,7 @@ bool AACEncoder::init(){
 	if (!check_sample_fmt(mCodec, mCodecContext->sample_fmt)) {
 		release();
 
-		LOG_ERROR("%s Encoder does not support sample format %s",
+		LOGE("%s Encoder does not support sample format %s",
 		 __FUNCTION__, av_get_sample_fmt_name(mCodecContext->sample_fmt));
 		return false;
 	}
@@ -99,7 +99,7 @@ bool AACEncoder::init(){
 	/* open it */
 	if (avcodec_open2(mCodecContext, mCodec, NULL) < 0) {
 	    release();
-	    LOG_ERROR("%s Could not open aac codec", __FUNCTION__);
+	    LOGE("%s Could not open aac codec", __FUNCTION__);
 		return false;
 	}
 
@@ -121,13 +121,13 @@ bool AACEncoder::encode(AVPacket *avpkt, const AVFrame *srcFrame){
 	}
 
 	if(!avpkt || !srcFrame){
-		LOG_ERROR("%s Error params",__FUNCTION__);
+		LOGE("%s Error params",__FUNCTION__);
         return false;
 	}
 	/* encode the samples */
 	ret = avcodec_encode_audio2(mCodecContext, avpkt, srcFrame, &got_output);
 	if (ret < 0) {
-	    LOG_ERROR("%s Error encoding audio frame",__FUNCTION__);
+	    LOGE("%s Error encoding audio frame",__FUNCTION__);
 	    return false;
 	}
 
@@ -135,7 +135,7 @@ bool AACEncoder::encode(AVPacket *avpkt, const AVFrame *srcFrame){
 	for (got_output = 1; got_output; i++) {
 		ret = avcodec_encode_audio2(mCodecContext, avpkt, NULL, &got_output);
 		if (ret < 0) {
-			LOG_ERROR("%s Error encoding audio frame2",__FUNCTION__);
+			LOGE("%s Error encoding audio frame2",__FUNCTION__);
 			return false;
 		}
 	}

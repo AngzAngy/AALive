@@ -37,12 +37,12 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_init
     jclass jclazz = jniEnv->GetObjectClass(jobj);
     localfields.nativePrt = jniEnv->GetFieldID(jclazz, "nativeObj", "J");
     if(!localfields.nativePrt){
-        LOG_ERROR("%s no field (nativeObj J)", __FUNCTION__);
+        LOGE("%s no field (nativeObj J)", __FUNCTION__);
         return;
     }
     NativeContext *ptr = new NativeContext;
     if(!ptr){
-        LOG_ERROR("%s new err", __FUNCTION__);
+        LOGE("%s new err", __FUNCTION__);
         return;
     }
     setNativePrt(jniEnv, jobj, ptr);
@@ -91,6 +91,7 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_onSurfaceChanged
         ptr->releaseVideoRawBuf();
         ptr->allocVideoRawBuf(jsurfaceHeight * jsurfaceWidth * 4);
 
+        ptr->liveMuxer.setMuxerInfo((ptr->liveMuxerInfo));
         ptr->liveMuxer.start();
     }
 }

@@ -77,13 +77,13 @@ bool H264Encoder::init(){
 	/* find the video encoder */
 	mCodec = avcodec_find_encoder(AV_CODEC_ID_H264);
 	if (!mCodec) {
-		LOG_ERROR("%s Codec not found", __FUNCTION__);
+		LOGE("%s Codec not found", __FUNCTION__);
 		return false;
 	}
 
 	mCodecContext = avcodec_alloc_context3(mCodec);
 	if (!mCodecContext) {
-		LOG_ERROR("%s Could not allocate video codec context", __FUNCTION__);
+		LOGE("%s Could not allocate video codec context", __FUNCTION__);
 		return false;
 	}
 
@@ -111,7 +111,7 @@ bool H264Encoder::init(){
 	/* open it */
 	if (avcodec_open2(mCodecContext, mCodec, NULL) < 0) {
 	    release();
-		LOG_ERROR("%s Could not open codec",__FUNCTION__);
+		LOGE("%s Could not open codec",__FUNCTION__);
 		return false;
 	}
 
@@ -123,13 +123,13 @@ bool H264Encoder::init(){
 			SWS_BILINEAR, NULL, NULL, NULL);
 		if (!mSwsContext) {
 		    release();
-			LOG_ERROR("%s Impossible to create scale context for the conversion fail",__FUNCTION__);
+			LOGE("%s Impossible to create scale context for the conversion fail",__FUNCTION__);
             return false;
 		}
 		mDstFrame = av_frame_alloc();
 		if (!mDstFrame) {
 		    release();
-			LOG_ERROR("%s Could not allocate video frame",__FUNCTION__);
+			LOGE("%s Could not allocate video frame",__FUNCTION__);
             return false;
         }
         mDstFrame->format = mCodecContext->pix_fmt;
@@ -141,7 +141,7 @@ bool H264Encoder::init(){
         if (av_image_alloc(mDstFrame->data, mDstFrame->linesize,
             mCodecContext->width, mCodecContext->height,mCodecContext->pix_fmt, 16) < 0) {
 		    release();
-			LOG_ERROR("%s Could not allocate raw picture buffer",__FUNCTION__);
+			LOGE("%s Could not allocate raw picture buffer",__FUNCTION__);
             return false;
         }
 	}
@@ -171,7 +171,7 @@ bool H264Encoder::encode(AVPacket *avpkt, const AVFrame *srcFrame) {
 	    return false;
 	}
 	if(!avpkt || !srcFrame){
-		LOG_ERROR("%s Error params",__FUNCTION__);
+		LOGE("%s Error params",__FUNCTION__);
         return false;
 	}
 	if (mSwsContext != NULL) {
@@ -187,7 +187,7 @@ bool H264Encoder::encode(AVPacket *avpkt, const AVFrame *srcFrame) {
 		ret = avcodec_encode_video2(mCodecContext, avpkt, srcFrame, &got_output);
 	}
 	if (ret < 0) {
-	    LOG_ERROR("%s Error encoding frame",__FUNCTION__);
+	    LOGE("%s Error encoding frame",__FUNCTION__);
 	    return false;
 	}
 
@@ -195,7 +195,7 @@ bool H264Encoder::encode(AVPacket *avpkt, const AVFrame *srcFrame) {
 	for (got_output = 1; got_output; i++) {
 		ret = avcodec_encode_video2(mCodecContext, avpkt, NULL, &got_output);
 		if (ret < 0) {
-			LOG_ERROR("%s Error encoding frame2",__FUNCTION__);
+			LOGE("%s Error encoding frame2",__FUNCTION__);
 			return false;
 		}
 	}

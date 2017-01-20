@@ -21,6 +21,7 @@ public:
     void releaseVideoRawBuf(){
         if(videoRawBuf){
             delete []videoRawBuf;
+            videoRawBuf = NULL;
         }
         videoRawBufBytes = 0;
     }
