@@ -61,12 +61,19 @@ bool LiveMuxer::start() {
     avcodec_register_all();
     avformat_network_init();
 
-    if(!audioEncoder.init()){
-        release();
-        LOGE("%s aencoder init err", __FUNCTION__);
-        return false;
-    }
-    if(!videoEncoder.init()){
+    mAudioEncoder.setSampleRate(mMuxerInfo.audioSampleRate);
+    mAudioEncoder.setChannelNumber(mMuxerInfo.audioChannelNumber);
+    mAudioEncoder.setBytePerSample(mMuxerInfo.audioBytesPerSample);
+    mAudioEncoder.setBitrate(mMuxerInfo.audioBitrate);
+//    if(!mAudioEncoder.init()){
+//        release();
+//        LOGE("%s aencoder init err", __FUNCTION__);
+//        return false;
+//    }
+    mVideoEncoder.setSrcVideoSize(mMuxerInfo.videoSrcWidth, mMuxerInfo.videoSrcHeight);
+    mVideoEncoder.setDstVideoSize(mMuxerInfo.videoDstWidth, mMuxerInfo.videoDstHeight);
+    mVideoEncoder.setBitrate(mMuxerInfo.voideoBitrate);
+    if(!mVideoEncoder.init()){
         release();
         LOGE("%s vencoder init err", __FUNCTION__);
         return false;
@@ -91,7 +98,7 @@ bool LiveMuxer::start() {
     mFormatContext->pb = avioContext;
     memcpy(mFormatContext->filename, mMuxerInfo.muxerUri.c_str(), mMuxerInfo.muxerUri.size());
 
-    mAudioStream = avformat_new_stream(mFormatContext, audioEncoder.getAVCodec());
+    mAudioStream = avformat_new_stream(mFormatContext, mAudioEncoder.getAVCodec());
     if(!mAudioStream){
         release();
         LOGE("%s new astream err", __FUNCTION__);
@@ -104,7 +111,7 @@ bool LiveMuxer::start() {
         mAudioStream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
     }
 
-    mVideoStream = avformat_new_stream(mFormatContext, videoEncoder.getAVCodec());
+    mVideoStream = avformat_new_stream(mFormatContext, mVideoEncoder.getAVCodec());
     if(!mVideoStream){
         release();
         LOGE("%s new vstream err", __FUNCTION__);
@@ -144,8 +151,8 @@ bool LiveMuxer::stop(){
 }
 
 void LiveMuxer::release() {
-    audioEncoder.release();
-    videoEncoder.release();
+    mAudioEncoder.release();
+    mVideoEncoder.release();
     if(mFormatContext){
         if(mFormatContext->pb) {
             avio_closep(&mFormatContext->pb);
@@ -163,33 +170,33 @@ bool LiveMuxer::writeMuxerFrame(AVPacket *pPacket, bool bIsAudio){
         return false;
     }
     if(bIsAudio) {
-        if(audioEncoder.getAVCodecContext() && mAudioStream) {
+        if(mAudioEncoder.getAVCodecContext() && mAudioStream) {
             pPacket->stream_index = mAudioStream->index;
             pPacket->pts = av_rescale_q_rnd(pPacket->pts,
-                                            audioEncoder.getAVCodecContext()->time_base,
+                                            mAudioEncoder.getAVCodecContext()->time_base,
                                             mAudioStream->time_base,
                                             AVRounding(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
             pPacket->dts = av_rescale_q_rnd(pPacket->dts,
-                                            audioEncoder.getAVCodecContext()->time_base,
+                                            mAudioEncoder.getAVCodecContext()->time_base,
                                             mAudioStream->time_base,
                                             AVRounding(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
             pPacket->duration = av_rescale_q(pPacket->duration,
-                                             audioEncoder.getAVCodecContext()->time_base,
+                                             mAudioEncoder.getAVCodecContext()->time_base,
                                              mAudioStream->time_base);
         }
     } else {
-        if(videoEncoder.getAVCodecContext() && mVideoStream) {
+        if(mVideoEncoder.getAVCodecContext() && mVideoStream) {
             pPacket->stream_index = mVideoStream->index;
             pPacket->pts = av_rescale_q_rnd(pPacket->pts,
-                                            videoEncoder.getAVCodecContext()->time_base,
+                                            mVideoEncoder.getAVCodecContext()->time_base,
                                             mVideoStream->time_base,
                                             AVRounding(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
             pPacket->dts = av_rescale_q_rnd(pPacket->dts,
-                                            videoEncoder.getAVCodecContext()->time_base,
+                                            mVideoEncoder.getAVCodecContext()->time_base,
                                             mVideoStream->time_base,
                                             AVRounding(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
             pPacket->duration = av_rescale_q(pPacket->duration,
-                                             videoEncoder.getAVCodecContext()->time_base,
+                                             mVideoEncoder.getAVCodecContext()->time_base,
                                              mVideoStream->time_base);
         }
     }
@@ -241,7 +248,7 @@ bool LiveMuxer::encodeVideoFrame(AVPacket *avpkt){
         mVideoReadPos = (++mVideoReadPos) % mVideoFrames.size();
         mVideoFramesCount--;
 
-        ret = videoEncoder.encode(avpkt, frame);
+        ret = mVideoEncoder.encode(avpkt, frame);
     }catch(...){
 
     }

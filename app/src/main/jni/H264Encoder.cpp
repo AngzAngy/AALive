@@ -50,10 +50,10 @@ static size_t readYUVFrameFromFile(AVFrame *frame, FILE *f) {
 }
 
 H264Encoder::H264Encoder():
-	mSrcWidth(0),
-	mSrcHeight(0),
-	mDstWidth(0),
-	mDstHeight(0),
+	mSrcWidth(640),
+	mSrcHeight(480),
+	mDstWidth(640),
+	mDstHeight(480),
 	mBitrate(400000),
 	mSrcPixelFormat(AV_PIX_FMT_YUV420P),
 	mCodec(NULL),

@@ -46,8 +46,8 @@ private:
     AVStream *mAudioStream;
     AVStream *mVideoStream;
 
-    AACEncoder audioEncoder;
-    H264Encoder videoEncoder;
+    AACEncoder mAudioEncoder;
+    H264Encoder mVideoEncoder;
 
     Thread mAEncoderThread;
     Thread mVEncoderThread;

@@ -4,8 +4,8 @@
 
 #include "LiveMuxerInfo.h"
 
-LiveMuxerInfo::LiveMuxerInfo():videoSrcWidth(0),videoSrcHeight(0),
-videoDstWidth(0),videoDstHeight(0), voideoBitrate(400000),
+LiveMuxerInfo::LiveMuxerInfo():videoSrcWidth(640),videoSrcHeight(480),
+videoDstWidth(640),videoDstHeight(480), voideoBitrate(400000),
 audioSampleRate(44100), audioChannelNumber(1), audioBytesPerSample(2),
 audioBitrate(128000){
 }

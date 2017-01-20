@@ -34,10 +34,10 @@ static int select_sample_rate(AVCodec *codec, int desireSampleRate){
 }
 
 AACEncoder::AACEncoder():
-	mSampleRate(0),
-	mChannelNumber(0),
-	mBytesPerSample(0),
-	mBitrate(0),
+	mSampleRate(44100),
+	mChannelNumber(1),
+	mBytesPerSample(2),
+	mBitrate(128000),
 	mCodec(NULL),
 	mCodecContext(NULL){
 }
