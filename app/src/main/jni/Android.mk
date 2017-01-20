@@ -56,7 +56,7 @@ LOCAL_SRC_FILES := Thread.cpp \
                    AACEncoder.cpp \
                    LiveMuxerInfo.cpp \
                    LiveMuxer.cpp \
-                   org_angzangy_aalive_OpenglNative \
+                   org_angzangy_aalive_OpenglNative.cpp
 
 LOCAL_LDLIBS := -llog  -landroid -lz -lGLESv2 -lOpenSLES
 
