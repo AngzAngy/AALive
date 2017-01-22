@@ -223,7 +223,14 @@ void LiveMuxer::queueVideoFrame(const char* rgbabuf, const int bufBytes){
     AVFrame *frame = mVideoFrames[mVideoWritePos];
     try {
         if (frame) {
-            memcpy(frame->data[0], rgbabuf, bufBytes);
+            int ppb = (frame->width) * 4;
+            uint8_t *src =(uint8_t *)rgbabuf;
+            uint8_t *dst = frame->data[0];
+            for(int x = 0; x < frame->height; x++){
+                memcpy(dst, src, ppb);
+                src += ppb;
+                dst += frame->linesize[0];
+            }
             mVideoWritePos = (++mVideoWritePos) % mVideoFrames.size();
             mVideoFramesCount++;
 
