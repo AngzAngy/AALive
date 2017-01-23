@@ -82,7 +82,7 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_onSurfaceChanged
         (JNIEnv *jniEnv, jobject jobj, jint jsurfaceWidth, jint jsurfaceHeight){
     NativeContext * ptr = getNativePtr(jniEnv, jobj);
     if(ptr){
-        ptr->liveMuxerInfo.muxerUri = "/sdcard/my_muxer.flv";
+        ptr->liveMuxerInfo.muxerUri = "rtmp://172.17.72.23:1935/myapp/test2";
         ptr->liveMuxerInfo.videoSrcWidth = jsurfaceWidth;
         ptr->liveMuxerInfo.videoSrcHeight = jsurfaceHeight;
         ptr->liveMuxerInfo.videoDstWidth = jsurfaceWidth;

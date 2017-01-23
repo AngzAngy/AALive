@@ -15,6 +15,7 @@ include_directories( # Specifies a path to header files
 
 link_directories(# Specifies a path to external libraries
                   src/main/jni/ffmpeg/lib/
+                  src/main/jni/libx264/lib/
                   )
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
@@ -83,6 +84,6 @@ target_link_libraries( # Specifies the target library.
                        libswresample.a
                        libavcodec.a
                        libavformat.a
-                       libavfilter.a
+                       libx264.a
                       "-Wl,--no-whole-archive"
                           )
