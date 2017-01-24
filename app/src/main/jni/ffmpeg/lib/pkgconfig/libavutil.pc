@@ -1,11 +1,11 @@
-prefix=/home/angzangy/ffmpeg_src/android/arm_static
+prefix=/home/kuwo/source/FFmpeg_Android/FFmpeg-release-2.6/android/armv7-a_neon
 exec_prefix=${prefix}
 libdir=${prefix}/lib
 includedir=${prefix}/include
 
 Name: libavutil
 Description: FFmpeg utility library
-Version: 52.83.100
+Version: 54.20.100
 Requires: 
 Requires.private: 
 Conflicts:
