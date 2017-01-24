@@ -1,49 +1,33 @@
 package org.angzangy.aalive;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.SurfaceTexture;
-import android.hardware.Camera;
-import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Parameters;
-import android.hardware.Camera.Size;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
-import android.util.SparseIntArray;
 import android.view.OrientationEventListener;
-import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.AdapterView;
-import android.widget.ListView;
-import android.widget.SeekBar;
-import android.widget.SimpleAdapter;
-import android.widget.TextView;
-import android.widget.Toast;
 
 public class CameraActivity extends BaseActivity
 implements SurfaceTextureStateChangedListener{
     private static final String TAG = "CameraActivity";
-    public static final double PREVIEW_RATIO = 16.0 / 9.0;
-    private Camera mCamera;
+//    public static final double PREVIEW_RATIO = 16.0 / 9.0;
+//    private Camera mCamera;
     private CameraPreviewGLView mCameraGLView;
-    private int mCameraId;
-    private CameraInfo mCameraInfo = new CameraInfo();
-    private int mPictureRotation;
+//    private int mCameraId;
+//    private CameraInfo mCameraInfo = new CameraInfo();
+//    private int mPictureRotation;
+    private CameraDevices mCamera;
 
     private MyOrientationEventListener mOrientationEventListener;
     // The degrees of the device rotated clockwise from its natural orientation.
     private int mOrientation = OrientationEventListener.ORIENTATION_UNKNOWN;
 
-    private Size mOptimalPreviewSize;
     private Handler mMainHandler = new Handler();
 
     private class MyOrientationEventListener extends OrientationEventListener{
@@ -59,14 +43,14 @@ implements SurfaceTextureStateChangedListener{
             if (orientation == ORIENTATION_UNKNOWN)
                 return;
             mOrientation = CameraUtil.roundOrientation(orientation, mOrientation);
-            if(mCamera!=null){
-                Camera.getCameraInfo(mCameraId, mCameraInfo);
-                mPictureRotation = CameraUtil.getPictureRotation(mCameraId, mCameraInfo, mOrientation);
-                Parameters parameters=mCamera.getParameters();
-                parameters.setRotation(mPictureRotation);
-                mCamera.setParameters(parameters);
-                Log.d(TAG, "pictureRotation=="+mPictureRotation);
-            }
+//            if(mCamera!=null){
+//                Camera.getCameraInfo(mCameraId, mCameraInfo);
+//                mPictureRotation = CameraUtil.getPictureRotation(mCameraId, mCameraInfo, mOrientation);
+//                Parameters parameters=mCamera.getParameters();
+//                parameters.setRotation(mPictureRotation);
+//                mCamera.setParameters(parameters);
+//                Log.d(TAG, "pictureRotation=="+mPictureRotation);
+//            }
         }
     }
     @Override
@@ -76,7 +60,6 @@ implements SurfaceTextureStateChangedListener{
         this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         UiUtils.initialize(this);
-        mCameraId= CameraInfo.CAMERA_FACING_FRONT;
         setContentView(R.layout.camera_main_layout);
         mCameraGLView=(CameraPreviewGLView)findViewById(R.id.camera_preview);
         mCameraGLView.setSurfaceTextureStateChangedListener(this);
@@ -85,7 +68,8 @@ implements SurfaceTextureStateChangedListener{
     }
 
     private void resizePreview(){
-        float ratio = ((float)mOptimalPreviewSize.width)/((float)mOptimalPreviewSize.height);
+        Size size = mCamera.getCameraPerviewSize();
+        float ratio = ((float)size.width)/((float)size.height);
         ViewGroup.LayoutParams lytParam = mCameraGLView.getLayoutParams();
         lytParam.width=UiUtils.screenWidth();
         lytParam.height=(int)(UiUtils.screenWidth()*ratio);
@@ -95,9 +79,9 @@ implements SurfaceTextureStateChangedListener{
     @Override
     public void onSurfaceTextureCreated(SurfaceTexture surfaceTexture) {
         try {
-            mCamera.setPreviewTexture(surfaceTexture);
+            mCamera.setCameraPreviewTexture(surfaceTexture);
             startCameraPreview();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -107,35 +91,32 @@ implements SurfaceTextureStateChangedListener{
     }
 
     private void setCameraParameter(){
-        Parameters parameters=mCamera.getParameters();
-        mOptimalPreviewSize = mCamera.new Size(1280,720);
-        parameters.setPreviewSize(mOptimalPreviewSize.width, mOptimalPreviewSize.height);
-        mCamera.setParameters(parameters);
+        mCamera.setCameraParameters();
         mMainHandler.post(new Runnable(){
             @Override
             public void run() {
                 resizePreview();
             }
         });
-        Log.i(TAG,parameters.flatten());
+
     }
 
     private void startCameraPreview(){
-        boolean bMirror = false;
-        if (mCameraId == CameraInfo.CAMERA_FACING_FRONT) {
-            bMirror = true;
-        }
-            int displayRotation = CameraUtil.getDisplayRotation(this);
-            int displayOrientation = CameraUtil.getDisplayOrientation(displayRotation,mCameraId);
+//        boolean bMirror = false;
+//        if (mCameraId == CameraInfo.CAMERA_FACING_FRONT) {
+//            bMirror = true;
+//        }
+//            int displayRotation = CameraUtil.getDisplayRotation(this);
+//            int displayOrientation = CameraUtil.getDisplayOrientation(displayRotation,mCameraId);
 
         if(mCamera!=null){
-            mCamera.startPreview();
+            mCamera.startCameraPreview();
         }
     }
 
     private void stopCameraPreview(){
         if(mCamera!=null){
-            mCamera.stopPreview();
+            mCamera.stopCameraPreview();
         }
     }
 
@@ -144,12 +125,13 @@ implements SurfaceTextureStateChangedListener{
             stopCameraPreview();
             releaseCamera();
         }
-        mCamera=Camera.open(CameraInfo.CAMERA_FACING_BACK);
+        mCamera = new CameraOneDevices();
+        mCamera.openCamera(CameraDevices.CAMERA_FACING_FRONT);
     }
 
     private void releaseCamera(){
         if(mCamera!=null){
-            mCamera.release();
+            mCamera.releaseCamera();
             mCamera=null;
         }
     }

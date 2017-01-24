@@ -71,8 +71,8 @@ bool H264Encoder::initEncoder(){
         return true;
     }
 
-//	av_register_all();
-//	avcodec_register_all();
+	av_register_all();
+	avcodec_register_all();
 	/* find the video encoder */
 	mCodec = avcodec_find_encoder(AV_CODEC_ID_H264);
 	if (!mCodec) {

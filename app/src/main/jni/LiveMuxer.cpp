@@ -36,12 +36,6 @@ LiveMuxer::LiveMuxer():mFormatContext(NULL),
                        mVideoWritePos(0),
                        mVideoReadPos(0),
                        mVideoFramesCount(0){
-    for(int i=0; i < 2; i++){
-        AVFrame *pFrame = allocVideoFrame();
-        if(pFrame) {
-            mVideoFrames.push_back(pFrame);
-        }
-    }
 }
 
 LiveMuxer::~LiveMuxer() {
@@ -63,6 +57,13 @@ bool LiveMuxer::start() {
     avformat_network_init();
 	av_log_set_level(AV_LOG_DEBUG);
 
+	for(int i=0; i < 2; i++){
+        AVFrame *pFrame = allocVideoFrame();
+        if(pFrame) {
+            mVideoFrames.push_back(pFrame);
+        }
+    }
+
     mAudioEncoder.setSampleRate(mMuxerInfo.audioSampleRate);
     mAudioEncoder.setChannelNumber(mMuxerInfo.audioChannelNumber);
     mAudioEncoder.setBytePerSample(mMuxerInfo.audioBytesPerSample);
@@ -75,7 +76,7 @@ bool LiveMuxer::start() {
     mVideoEncoder.setSrcVideoSize(mMuxerInfo.videoSrcWidth, mMuxerInfo.videoSrcHeight);
     mVideoEncoder.setDstVideoSize(mMuxerInfo.videoDstWidth, mMuxerInfo.videoDstHeight);
     mVideoEncoder.setBitrate(mMuxerInfo.voideoBitrate);
-	mVideoEncoder.setSrcPixelFormat(AV_PIX_FMT_RGBA);
+	mVideoEncoder.setSrcPixelFormat(AV_PIX_FMT_NV21);
     if(!mVideoEncoder.initEncoder()){
         release();
         LOGE("%s vencoder init err", __FUNCTION__);
@@ -101,18 +102,18 @@ bool LiveMuxer::start() {
     mFormatContext->pb = avioContext;
     memcpy(mFormatContext->filename, mMuxerInfo.muxerUri.c_str(), mMuxerInfo.muxerUri.size());
 
-//    mAudioStream = avformat_new_stream(mFormatContext, mAudioEncoder.getAVCodec());
-//    if(!mAudioStream){
-//        release();
-//        LOGE("%s new astream err", __FUNCTION__);
-//        return false;
-//    }
-//    mAudioStream->time_base.den = mMuxerInfo.audioSampleRate;
-//    mAudioStream->time_base.num = 1;
-//    mAudioStream->codec->codec_tag = 0;
-//    if (mFormatContext->oformat->flags & AVFMT_GLOBALHEADER) {
-//        mAudioStream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
-//    }
+/*    mAudioStream = avformat_new_stream(mFormatContext, mAudioEncoder.getAVCodec());
+    if(!mAudioStream){
+        release();
+        LOGE("%s new astream err", __FUNCTION__);
+        return false;
+    }
+    mAudioStream->time_base.den = mMuxerInfo.audioSampleRate;
+    mAudioStream->time_base.num = 1;
+    mAudioStream->codec->codec_tag = 0;
+    if (mFormatContext->oformat->flags & AVFMT_GLOBALHEADER) {
+        mAudioStream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
+    }*/
 
     mVideoStream = avformat_new_stream(mFormatContext, mVideoEncoder.getAVCodec());
     if(!mVideoStream){
@@ -230,7 +231,7 @@ AVFrame* LiveMuxer::allocVideoFrame(){
     if(pFrame){
         pFrame->width = mMuxerInfo.videoSrcWidth;
         pFrame->height = mMuxerInfo.videoSrcHeight;
-        pFrame->format = AV_PIX_FMT_RGBA;
+        pFrame->format = AV_PIX_FMT_NV21;
         av_frame_get_buffer(pFrame, 16);
     }
     return pFrame;
@@ -241,13 +242,30 @@ void LiveMuxer::queueVideoFrame(const char* rgbabuf, const int bufBytes){
     AVFrame *frame = mVideoFrames[mVideoWritePos];
     try {
         if (frame) {
-            int ppb = (frame->width) * 4;
-            uint8_t *src =(uint8_t *)rgbabuf;
-            uint8_t *dst = frame->data[0];
-            for(int x = 0; x < frame->height; x++){
-                memcpy(dst, src, ppb);
-                src += ppb;
-                dst += frame->linesize[0];
+            if(frame->format == AV_PIX_FMT_RGBA) {
+                int ppb = (frame->width) * 4;
+                uint8_t *src = (uint8_t *) rgbabuf;
+                uint8_t *dst = frame->data[0];
+                for (int x = 0; x < frame->height; x++) {
+                    memcpy(dst, src, ppb);
+                    src += ppb;
+                    dst += frame->linesize[0];
+                }
+            } else if(frame->format == AV_PIX_FMT_NV21){
+                int frameSize = frame->width * frame->height;
+                uint8_t *srcY = (uint8_t *) rgbabuf;
+                uint8_t *srcUV = srcY + frameSize;
+                uint8_t *dstY = frame->data[0];
+                uint8_t *dstUV = frame->data[1];
+                for (int x = 0; x < frame->height; x++) {
+                    memcpy(dstY, srcY, frame->width);
+                    dstY += frame->linesize[0];
+
+                    if(x % 2 == 0){
+                        memcpy(dstUV, srcUV, frame->width);
+                        dstUV += frame->linesize[1];
+                    }
+                }
             }
             mVideoWritePos = (++mVideoWritePos) % mVideoFrames.size();
             mVideoFramesCount++;
@@ -264,7 +282,7 @@ bool LiveMuxer::encodeVideoFrame(AVPacket *avpkt){
     bool ret = false;
     mVideoFramesMutex.lock();
 
-    if(mVideoFramesCount <= 0){
+    while(mVideoFramesCount <= 0){
         mVideoFramesCondition.wait(mVideoFramesMutex);
     }
 

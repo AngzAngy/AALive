@@ -18,4 +18,5 @@ public class OpenglNative {
     public native void onSurfaceCreated();
     public native void onSurfaceChanged(int width, int height);
     public native void onDrawFrame();
+    public native void pushNV21Buffer(byte[] buffer, int with, int height);
 }

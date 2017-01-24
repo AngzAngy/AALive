@@ -47,6 +47,14 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_onSurfaceChanged
 JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_onDrawFrame
   (JNIEnv *, jobject);
 
+/*
+ * Class:     org_angzangy_aalive_OpenglNative
+ * Method:    pushNV21Buffer
+ * Signature: ([BII)V
+ */
+JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_pushNV21Buffer
+  (JNIEnv *, jobject, jbyteArray, jint, jint);
+
 #ifdef __cplusplus
 }
 #endif

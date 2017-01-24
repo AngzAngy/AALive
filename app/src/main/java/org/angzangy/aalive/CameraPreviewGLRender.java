@@ -18,7 +18,6 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
     private SurfaceTexture.OnFrameAvailableListener mOnFrameAvailableListener;
     private SurfaceTextureRenderer mSurfaceRenderer;
     protected float[] mMVPMatrix = new float[16];
-    private OpenglNative mOpenglNative;
 
 
     /*
@@ -37,10 +36,6 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         if(mSurfaceRenderer != null){
             mSurfaceRenderer.drawTexture2D(mSurfaceTextId, mMVPMatrix);
-
-            if(mOpenglNative != null){
-                mOpenglNative.onDrawFrame();
-            }
         }
     }
 
@@ -53,9 +48,6 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
     @Override
     public void onSurfaceChanged(GL10 glUnused, int width, int height) {
         GLES20.glViewport(0, 0, width, height);
-        if(mOpenglNative != null){
-            mOpenglNative.onSurfaceChanged(width, height);
-        }
     }
 
     /*
@@ -66,13 +58,6 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
      */
     @Override
     public void onSurfaceCreated(GL10 glUnused, EGLConfig config) {
-        if(mOpenglNative != null){
-            mOpenglNative.release();
-        }
-        mOpenglNative = new OpenglNative();
-        if(mOpenglNative != null){
-            mOpenglNative.onSurfaceCreated();
-        }
 
         GLES20.glEnable(GLES20.GL_TEXTURE);
 

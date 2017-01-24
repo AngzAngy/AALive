@@ -29,9 +29,11 @@ int Thread::join() {
 
 void* Thread::startThread(void* ptr) {
 	Thread* thread = (Thread *) ptr;
-	while(thread && thread->mRunning && (thread->mCB.callback) != NULL){
+	while(thread && thread->mRunning){
 		try {
-			thread->mCB.callback(thread->mCB.opaque);
+		    if(thread->mCB.callback != NULL){
+			    thread->mCB.callback(thread->mCB.opaque);
+			}
 		}catch (...){
 		}
 	}

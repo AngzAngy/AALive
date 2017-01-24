@@ -89,8 +89,6 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_onSurfaceChanged
         ptr->liveMuxerInfo.videoDstHeight = jsurfaceHeight;
         ptr->liveMuxerInfo.voideoBitrate = 400000;
         ptr->videoRawBuf = NULL;
-//        ptr->releaseVideoRawBuf();
-//        ptr->allocVideoRawBuf(jsurfaceHeight * jsurfaceWidth * 4);
 
         ptr->liveMuxer.setMuxerInfo((ptr->liveMuxerInfo));
         ptr->liveMuxer.start();
@@ -116,4 +114,19 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_onDrawFrame
         ptr->liveMuxer.queueVideoFrame(ptr->videoRawBuf, ptr->videoRawBufBytes);
     }
 }
+
+/*
+ * Class:     org_angzangy_aalive_OpenglNative
+ * Method:    pushNV21Buffer
+ * Signature: ([BII)V
+ */
+JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_pushNV21Buffer
+  (JNIEnv *jniEnv, jobject jobj, jbyteArray jbuffer, jint jw, jint jh){
+    NativeContext * ptr = getNativePtr(jniEnv, jobj);
+    if(ptr && jbuffer){
+        jbyte* buffer = jniEnv->GetByteArrayElements(jbuffer, NULL);
+        ptr->liveMuxer.queueVideoFrame((const char *)buffer, jw * jh * 3 / 2);
+        jniEnv->ReleaseByteArrayElements(jbuffer, buffer, 0);
+    }
+ }
 
