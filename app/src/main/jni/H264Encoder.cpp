@@ -66,11 +66,10 @@ H264Encoder::~H264Encoder(){
     release();
 }
 
-bool H264Encoder::init(){
+bool H264Encoder::initEncoder(){
     if(NULL != mCodecContext){
         return true;
     }
-	uint8_t endcode[] = { 0, 0, 1, 0xb7 };
 
 //	av_register_all();
 //	avcodec_register_all();
@@ -80,8 +79,11 @@ bool H264Encoder::init(){
 		LOGE("%s Codec not found", __FUNCTION__);
 		return false;
 	}
+	return true;
+}
 
-	mCodecContext = avcodec_alloc_context3(mCodec);
+bool H264Encoder::initEncoderContext(AVCodecContext *codecContext){
+	mCodecContext = codecContext;
 	if (!mCodecContext) {
 		LOGE("%s Could not allocate video codec context", __FUNCTION__);
 		return false;
@@ -101,7 +103,7 @@ bool H264Encoder::init(){
 	* then gop_size is ignored and the output of encoder
 	* will always be I frame irrespective to gop_size
 	*/
-	mCodecContext->gop_size = 10;
+	mCodecContext->gop_size = 25;
 	mCodecContext->max_b_frames = 1;
 	mCodecContext->pix_fmt = AV_PIX_FMT_YUV420P;
 
@@ -110,40 +112,40 @@ bool H264Encoder::init(){
 
 	/* open it */
 	if (avcodec_open2(mCodecContext, mCodec, NULL) < 0) {
-	    release();
+		release();
 		LOGE("%s Could not open codec",__FUNCTION__);
 		return false;
 	}
 
 	if (mSrcPixelFormat != AV_PIX_FMT_YUV420P
-	    || mSrcWidth != mDstWidth || mSrcHeight != mDstHeight) {
+		|| mSrcWidth != mDstWidth || mSrcHeight != mDstHeight) {
 		/* create scaling context */
 		mSwsContext = sws_getContext(mSrcWidth, mSrcHeight, mSrcPixelFormat,
-			mDstWidth, mDstHeight, AV_PIX_FMT_YUV420P,
-			SWS_BILINEAR, NULL, NULL, NULL);
+									 mDstWidth, mDstHeight, AV_PIX_FMT_YUV420P,
+									 SWS_BILINEAR, NULL, NULL, NULL);
 		if (!mSwsContext) {
-		    release();
+			release();
 			LOGE("%s Impossible to create scale context for the conversion fail",__FUNCTION__);
-            return false;
+			return false;
 		}
 		mDstFrame = av_frame_alloc();
 		if (!mDstFrame) {
-		    release();
+			release();
 			LOGE("%s Could not allocate video frame",__FUNCTION__);
-            return false;
-        }
-        mDstFrame->format = mCodecContext->pix_fmt;
-        mDstFrame->width = mCodecContext->width;
-        mDstFrame->height = mCodecContext->height;
+			return false;
+		}
+		mDstFrame->format = mCodecContext->pix_fmt;
+		mDstFrame->width = mCodecContext->width;
+		mDstFrame->height = mCodecContext->height;
 
-        /* the image can be allocated by any means and av_image_alloc() is
+		/* the image can be allocated by any means and av_image_alloc() is
         * just the most convenient way if av_malloc() is to be used */
-        if (av_image_alloc(mDstFrame->data, mDstFrame->linesize,
-            mCodecContext->width, mCodecContext->height,mCodecContext->pix_fmt, 16) < 0) {
-		    release();
+		if (av_image_alloc(mDstFrame->data, mDstFrame->linesize,
+						   mCodecContext->width, mCodecContext->height,mCodecContext->pix_fmt, 16) < 0) {
+			release();
 			LOGE("%s Could not allocate raw picture buffer",__FUNCTION__);
-            return false;
-        }
+			return false;
+		}
 	}
 	return true;
 }
@@ -166,10 +168,7 @@ void H264Encoder::release(){
 }
 
 bool H264Encoder::encode(AVPacket *avpkt, const AVFrame *srcFrame) {
-	int i = 0 , ret , got_output;
-	if(!init()){
-	    return false;
-	}
+	int i = 0 , ret = 0, got_output = 0;
 	if(!avpkt || !srcFrame){
 		LOGE("%s Error params",__FUNCTION__);
         return false;
@@ -192,13 +191,15 @@ bool H264Encoder::encode(AVPacket *avpkt, const AVFrame *srcFrame) {
 	}
 
 	/* get the delayed frames */
-	for (got_output = 1; got_output; i++) {
+	/*for (got_output = 1; got_output; i++) {
 		ret = avcodec_encode_video2(mCodecContext, avpkt, NULL, &got_output);
 		if (ret < 0) {
 			LOGE("%s Error encoding frame2",__FUNCTION__);
 			return false;
 		}
+	}*/
+	if (got_output){
+		return true;
 	}
-
-	return true;
+	return false;
 }

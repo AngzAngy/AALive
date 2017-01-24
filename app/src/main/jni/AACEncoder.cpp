@@ -46,22 +46,18 @@ AACEncoder::~AACEncoder(){
     release();
 }
 
-bool AACEncoder::init(){
-    if(NULL != mCodecContext){
-        return true;
-    }
-
-//	av_register_all();
-//	avcodec_register_all();
-
+bool AACEncoder::initEncoder(){
 	/* find the AAC encoder */
 	mCodec = avcodec_find_encoder(AV_CODEC_ID_AAC);
 	if (!mCodec) {
 		LOGE("%s AAC Codec not found", __FUNCTION__);
 		return false;
 	}
+	return true;
+}
 
-	mCodecContext = avcodec_alloc_context3(mCodec);
+bool AACEncoder::initEncoderContext(AVCodecContext *codecContext){
+	mCodecContext = codecContext;
 	if (!mCodecContext) {
 		LOGE("%s Could not allocate audio codec context", __FUNCTION__);
 		return false;
@@ -76,30 +72,30 @@ bool AACEncoder::init(){
 		release();
 
 		LOGE("%s Encoder does not support sample format %s",
-		 __FUNCTION__, av_get_sample_fmt_name(mCodecContext->sample_fmt));
+			 __FUNCTION__, av_get_sample_fmt_name(mCodecContext->sample_fmt));
 		return false;
 	}
 
 	/* select other audio parameters supported by the encoder */
 	mCodecContext->sample_rate = select_sample_rate(mCodec, mSampleRate);
 	switch (mChannelNumber){
-	case 1:
-		mCodecContext->channel_layout = AV_CH_LAYOUT_MONO;
-		break;
-	case 2:
-		mCodecContext->channel_layout = AV_CH_LAYOUT_STEREO;
-		break;
-	default:
-	    release();
-		return false;
+		case 1:
+			mCodecContext->channel_layout = AV_CH_LAYOUT_MONO;
+			break;
+		case 2:
+			mCodecContext->channel_layout = AV_CH_LAYOUT_STEREO;
+			break;
+		default:
+			release();
+			return false;
 	}
 
 	mCodecContext->channels = av_get_channel_layout_nb_channels(mCodecContext->channel_layout);
 
 	/* open it */
 	if (avcodec_open2(mCodecContext, mCodec, NULL) < 0) {
-	    release();
-	    LOGE("%s Could not open aac codec", __FUNCTION__);
+		release();
+		LOGE("%s Could not open aac codec", __FUNCTION__);
 		return false;
 	}
 
@@ -115,10 +111,7 @@ void AACEncoder::release(){
 }
 
 bool AACEncoder::encode(AVPacket *avpkt, const AVFrame *srcFrame){
-    int i = 0 , ret , got_output;
-	if(!init()){
-	    return false;
-	}
+    int i = 0 , ret = 0  , got_output = 0 ;
 
 	if(!avpkt || !srcFrame){
 		LOGE("%s Error params",__FUNCTION__);
@@ -132,13 +125,16 @@ bool AACEncoder::encode(AVPacket *avpkt, const AVFrame *srcFrame){
 	}
 
 	/* get the delayed frames */
-	for (got_output = 1; got_output; i++) {
-		ret = avcodec_encode_audio2(mCodecContext, avpkt, NULL, &got_output);
-		if (ret < 0) {
-			LOGE("%s Error encoding audio frame2",__FUNCTION__);
-			return false;
-		}
-	}
+//	for (got_output = 1; got_output; i++) {
+//		ret = avcodec_encode_audio2(mCodecContext, avpkt, NULL, &got_output);
+//		if (ret < 0) {
+//			LOGE("%s Error encoding audio frame2",__FUNCTION__);
+//			return false;
+//		}
+//	}
 
-	return true;
+	if(got_output){
+		return true;
+	}
+	return false;
 }

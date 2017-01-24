@@ -34,10 +34,10 @@ public:
 	AVCodecContext *getAVCodecContext(){
 		return mCodecContext;
 	}
+	bool initEncoder();
+	bool initEncoderContext(AVCodecContext *codecContext);
 	bool encode(AVPacket *avpkt, const AVFrame *srcFrame);
     void release();
-
-	bool init();
 private:
 	int mSampleRate;
 	int mChannelNumber;

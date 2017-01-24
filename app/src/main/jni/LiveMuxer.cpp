@@ -9,24 +9,25 @@ static int decode_interrupt_cb(void *pMuxer) {
 }
 
 void LiveMuxer::aEncodeThreadCallback(void *pMuxer){
-    LiveMuxer *pLiveMuxer = (LiveMuxer*)pLiveMuxer;
+ /*   LiveMuxer *pLiveMuxer = (LiveMuxer*)pLiveMuxer;
     if(pLiveMuxer){
 
-    }
+    }*/
 }
 
 void LiveMuxer::vEncodeThreadCallback(void *pMuxer){
-    static AVPacket pkt;
-    LiveMuxer *pLiveMuxer = (LiveMuxer*)pLiveMuxer;
-//    if(pLiveMuxer){
-        av_init_packet(&pkt);
-        pkt.data = NULL;    // packet data will be allocated by the encoder
-        pkt.size = 0;
-        if(pLiveMuxer->encodeVideoFrame(&pkt)){
-            pLiveMuxer->writeMuxerFrame(&pkt, false);
+	AVPacket output_packet;
+	LiveMuxer *pLiveMuxer = NULL;
+	pLiveMuxer = (LiveMuxer*)pMuxer;
+	av_init_packet(&output_packet);
+	output_packet.data = NULL;
+	output_packet.size = 0;
+	if (pLiveMuxer){
+		if (pLiveMuxer->encodeVideoFrame(&output_packet)){
+			pLiveMuxer->writeMuxerFrame(&output_packet, false);
         }
-        av_packet_unref(&pkt);
-//    }
+    }
+	av_packet_unref(&output_packet);
 }
 
 LiveMuxer::LiveMuxer():mFormatContext(NULL),
@@ -35,7 +36,7 @@ LiveMuxer::LiveMuxer():mFormatContext(NULL),
                        mVideoWritePos(0),
                        mVideoReadPos(0),
                        mVideoFramesCount(0){
-    for(int i=0; i < 4; i++){
+    for(int i=0; i < 2; i++){
         AVFrame *pFrame = allocVideoFrame();
         if(pFrame) {
             mVideoFrames.push_back(pFrame);
@@ -60,12 +61,13 @@ bool LiveMuxer::start() {
     av_register_all();
     avcodec_register_all();
     avformat_network_init();
+	av_log_set_level(AV_LOG_DEBUG);
 
     mAudioEncoder.setSampleRate(mMuxerInfo.audioSampleRate);
     mAudioEncoder.setChannelNumber(mMuxerInfo.audioChannelNumber);
     mAudioEncoder.setBytePerSample(mMuxerInfo.audioBytesPerSample);
     mAudioEncoder.setBitrate(mMuxerInfo.audioBitrate);
-//    if(!mAudioEncoder.init()){
+//    if(!mAudioEncoder.initEncoder()){
 //        release();
 //        LOGE("%s aencoder init err", __FUNCTION__);
 //        return false;
@@ -73,7 +75,8 @@ bool LiveMuxer::start() {
     mVideoEncoder.setSrcVideoSize(mMuxerInfo.videoSrcWidth, mMuxerInfo.videoSrcHeight);
     mVideoEncoder.setDstVideoSize(mMuxerInfo.videoDstWidth, mMuxerInfo.videoDstHeight);
     mVideoEncoder.setBitrate(mMuxerInfo.voideoBitrate);
-    if(!mVideoEncoder.init()){
+	mVideoEncoder.setSrcPixelFormat(AV_PIX_FMT_RGBA);
+    if(!mVideoEncoder.initEncoder()){
         release();
         LOGE("%s vencoder init err", __FUNCTION__);
         return false;
@@ -98,18 +101,18 @@ bool LiveMuxer::start() {
     mFormatContext->pb = avioContext;
     memcpy(mFormatContext->filename, mMuxerInfo.muxerUri.c_str(), mMuxerInfo.muxerUri.size());
 
-    mAudioStream = avformat_new_stream(mFormatContext, mAudioEncoder.getAVCodec());
-    if(!mAudioStream){
-        release();
-        LOGE("%s new astream err", __FUNCTION__);
-        return false;
-    }
-    mAudioStream->time_base.den = mMuxerInfo.audioSampleRate;
-    mAudioStream->time_base.num = 1;
-    mAudioStream->codec->codec_tag = 0;
-    if (mFormatContext->oformat->flags & AVFMT_GLOBALHEADER) {
-        mAudioStream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
-    }
+//    mAudioStream = avformat_new_stream(mFormatContext, mAudioEncoder.getAVCodec());
+//    if(!mAudioStream){
+//        release();
+//        LOGE("%s new astream err", __FUNCTION__);
+//        return false;
+//    }
+//    mAudioStream->time_base.den = mMuxerInfo.audioSampleRate;
+//    mAudioStream->time_base.num = 1;
+//    mAudioStream->codec->codec_tag = 0;
+//    if (mFormatContext->oformat->flags & AVFMT_GLOBALHEADER) {
+//        mAudioStream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
+//    }
 
     mVideoStream = avformat_new_stream(mFormatContext, mVideoEncoder.getAVCodec());
     if(!mVideoStream){
@@ -122,6 +125,11 @@ bool LiveMuxer::start() {
     mVideoStream->codec->codec_tag = 0;
     if (mFormatContext->oformat->flags & AVFMT_GLOBALHEADER) {
         mVideoStream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
+    }
+    if(!mVideoEncoder.initEncoderContext(mVideoStream->codec)){
+        release();
+        LOGE("%s init venctx err", __FUNCTION__);
+        return false;
     }
 
     if(avformat_write_header(mFormatContext, NULL) < 0){
@@ -161,6 +169,16 @@ void LiveMuxer::release() {
         avformat_free_context(mFormatContext);
         mFormatContext = NULL;
     }
+    for(std::vector<AVFrame*>::iterator it = mVideoFrames.begin(); it != mVideoFrames.end(); ++it){
+        AVFrame *frame = *it;
+        if(frame){
+            if (frame->data[0]) {
+                av_free(frame->data[0]);
+            }
+            av_free(frame);
+        }
+    }
+    mVideoFrames.clear();
 }
 
 bool LiveMuxer::writeMuxerFrame(AVPacket *pPacket, bool bIsAudio){

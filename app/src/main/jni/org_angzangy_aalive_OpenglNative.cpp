@@ -88,8 +88,9 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_onSurfaceChanged
         ptr->liveMuxerInfo.videoDstWidth = jsurfaceWidth;
         ptr->liveMuxerInfo.videoDstHeight = jsurfaceHeight;
         ptr->liveMuxerInfo.voideoBitrate = 400000;
-        ptr->releaseVideoRawBuf();
-        ptr->allocVideoRawBuf(jsurfaceHeight * jsurfaceWidth * 4);
+        ptr->videoRawBuf = NULL;
+//        ptr->releaseVideoRawBuf();
+//        ptr->allocVideoRawBuf(jsurfaceHeight * jsurfaceWidth * 4);
 
         ptr->liveMuxer.setMuxerInfo((ptr->liveMuxerInfo));
         ptr->liveMuxer.start();
@@ -106,6 +107,10 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_onDrawFrame
     if(ptr){
         GLsizei width = ptr->liveMuxerInfo.videoSrcWidth;
         GLsizei height = ptr->liveMuxerInfo.videoSrcHeight;
+        if(NULL == ptr->videoRawBuf){
+            ptr->videoRawBuf = new char[width * height * 4];
+            ptr->videoRawBufBytes = width * height * 4;
+        }
         GLvoid* pixels = (GLvoid*)ptr->videoRawBuf;
         glReadPixels (0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
         ptr->liveMuxer.queueVideoFrame(ptr->videoRawBuf, ptr->videoRawBufBytes);

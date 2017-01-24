@@ -40,9 +40,10 @@ public:
 		return mCodecContext;
 	}
 
+	bool initEncoder();
+	bool initEncoderContext(AVCodecContext *codecContext);
 	bool encode(AVPacket *avpkt, const AVFrame *srcFrame);
 	void release();
-	bool init();
 private:
 	int mSrcWidth;
 	int mSrcHeight;
