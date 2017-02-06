@@ -1,13 +1,9 @@
 package org.angzangy.aalive;
 
-import java.io.IOException;
-
 import android.content.Context;
 import android.graphics.SurfaceTexture;
-import android.hardware.Camera.Parameters;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.OrientationEventListener;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -22,7 +18,7 @@ implements SurfaceTextureStateChangedListener{
 //    private int mCameraId;
 //    private CameraInfo mCameraInfo = new CameraInfo();
 //    private int mPictureRotation;
-    private CameraDevices mCamera;
+    private ICameraDevices mCamera;
 
     private MyOrientationEventListener mOrientationEventListener;
     // The degrees of the device rotated clockwise from its natural orientation.
@@ -126,7 +122,7 @@ implements SurfaceTextureStateChangedListener{
             releaseCamera();
         }
         mCamera = new CameraOneDevices();
-        mCamera.openCamera(CameraDevices.CAMERA_FACING_FRONT);
+        mCamera.openCamera(ICameraDevices.CAMERA_FACING_FRONT);
     }
 
     private void releaseCamera(){

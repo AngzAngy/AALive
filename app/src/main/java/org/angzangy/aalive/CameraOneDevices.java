@@ -15,7 +15,7 @@ import java.util.ArrayList;
  * Created on 2017/1/24.
  */
 
-public class CameraOneDevices implements CameraDevices,
+public class CameraOneDevices implements ICameraDevices,
         Camera.PreviewCallback{
     private static final String TAG = "CameraOneDevices";
     private int mCameraId;
