@@ -56,7 +56,8 @@ LOCAL_CPPFLAGS :=  -std=gnu++11 -fexceptions -frtti
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/ffmpeg/include
 
 
-LOCAL_SRC_FILES := Thread.cpp \
+LOCAL_SRC_FILES := CommonGlobaldef.cpp \
+                   Thread.cpp \
                    H264Encoder.cpp \
                    AACEncoder.cpp \
                    LiveMuxerInfo.cpp \

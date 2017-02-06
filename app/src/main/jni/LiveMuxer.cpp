@@ -3,6 +3,7 @@
 //
 #include "LiveMuxer.h"
 #include "AALog.h"
+#include "CommonGlobaldef.h"
 
 static int decode_interrupt_cb(void *pMuxer) {
     return false;
@@ -35,7 +36,9 @@ LiveMuxer::LiveMuxer():mFormatContext(NULL),
                        mVideoStream(NULL),
                        mVideoWritePos(0),
                        mVideoReadPos(0),
-                       mVideoFramesCount(0){
+                       mVideoFramesCount(0),
+                       mVideoArrivedTime(-1),
+                       mVideoBeginTime(-1){
 }
 
 LiveMuxer::~LiveMuxer() {
@@ -180,6 +183,7 @@ void LiveMuxer::release() {
         }
     }
     mVideoFrames.clear();
+    mVideoBeginTime = -1;
 }
 
 bool LiveMuxer::writeMuxerFrame(AVPacket *pPacket, bool bIsAudio){
@@ -242,6 +246,11 @@ void LiveMuxer::queueVideoFrame(const char* rgbabuf, const int bufBytes){
     AVFrame *frame = mVideoFrames[mVideoWritePos];
     try {
         if (frame) {
+            mVideoArrivedTime = currentUsec();
+            if(mVideoBeginTime == -1){
+                mVideoBeginTime = mVideoArrivedTime;
+            }
+            int64_t videoDifferTime = mVideoArrivedTime - mVideoBeginTime;
             if(frame->format == AV_PIX_FMT_RGBA) {
                 int ppb = (frame->width) * 4;
                 uint8_t *src = (uint8_t *) rgbabuf;
@@ -269,6 +278,9 @@ void LiveMuxer::queueVideoFrame(const char* rgbabuf, const int bufBytes){
                     }
                 }
             }
+
+            frame->pts = videoDifferTime / 1000;
+
             mVideoWritePos = (++mVideoWritePos) % mVideoFrames.size();
             mVideoFramesCount++;
 
