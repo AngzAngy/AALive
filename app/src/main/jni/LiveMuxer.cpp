@@ -260,9 +260,11 @@ void LiveMuxer::queueVideoFrame(const char* rgbabuf, const int bufBytes){
                 for (int x = 0; x < frame->height; x++) {
                     memcpy(dstY, srcY, frame->width);
                     dstY += frame->linesize[0];
+                    srcY += frame->width;
 
                     if(x % 2 == 0){
                         memcpy(dstUV, srcUV, frame->width);
+                        srcUV += frame->width;
                         dstUV += frame->linesize[1];
                     }
                 }
