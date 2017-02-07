@@ -45,6 +45,16 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_init
         LOGE("%s new err", __FUNCTION__);
         return;
     }
+    ptr->liveMuxerInfo.muxerUri = "rtmp://172.17.72.23:1935/myapp/test2";
+    ptr->liveMuxerInfo.audioSampleRate = 44100;
+    ptr->liveMuxerInfo.audioBytesPerSample = 2;
+    ptr->liveMuxerInfo.audioChannelNumber = 1;
+    ptr->liveMuxerInfo.audioBitrate = 128000;
+    AudioRecord *pAudioRecord = new AudioRecord(ptr->liveMuxerInfo.audioSampleRate, ptr->liveMuxerInfo.audioBytesPerSample,
+                                                ptr->liveMuxerInfo.audioChannelNumber, 4096);
+    if(pAudioRecord){
+        ptr->audioRecord = pAudioRecord;
+    }
     setNativePrt(jniEnv, jobj, ptr);
 }
 
@@ -59,6 +69,10 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_release
     if(ptr){
         ptr->liveMuxer.stop();
         ptr->liveMuxer.release();
+        if(ptr->audioRecord){
+            ptr->audioRecord->stop();
+            delete (ptr->audioRecord);
+        }
         delete(ptr);
     }
     setNativePrt(jniEnv, jobj, NULL);
@@ -82,7 +96,6 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_onSurfaceChanged
         (JNIEnv *jniEnv, jobject jobj, jint jsurfaceWidth, jint jsurfaceHeight){
     NativeContext * ptr = getNativePtr(jniEnv, jobj);
     if(ptr){
-        ptr->liveMuxerInfo.muxerUri = "rtmp://172.17.72.23:1935/myapp/test2";
         ptr->liveMuxerInfo.videoSrcWidth = jsurfaceWidth;
         ptr->liveMuxerInfo.videoSrcHeight = jsurfaceHeight;
         ptr->liveMuxerInfo.videoDstWidth = jsurfaceWidth;
@@ -92,6 +105,10 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_onSurfaceChanged
 
         ptr->liveMuxer.setMuxerInfo((ptr->liveMuxerInfo));
         ptr->liveMuxer.start();
+        if(ptr->audioRecord){
+            ptr->audioRecord->setOnFrameCallback(LiveMuxer::audioFrameCallback, &(ptr->liveMuxer));
+            ptr->audioRecord->start();
+        }
     }
 }
 /*

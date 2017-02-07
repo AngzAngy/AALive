@@ -3,6 +3,7 @@
 //
 #include "LiveMuxer.h"
 #include "LiveMuxerInfo.h"
+#include "AudioRecord.h"
 
 #ifndef AALIVE_NATIVECONTEXT_H
 #define AALIVE_NATIVECONTEXT_H
@@ -11,6 +12,7 @@ public:
     NativeContext(){
         videoRawBuf = NULL;
         videoRawBufBytes = 0;
+        audioRecord = NULL;
     }
     void allocVideoRawBuf(int bytes){
         videoRawBuf = new char[bytes];
@@ -29,5 +31,6 @@ public:
     LiveMuxerInfo liveMuxerInfo;
     char *videoRawBuf;
     int videoRawBufBytes;
+    AudioRecord *audioRecord;
 };
 #endif //AALIVE_NATIVECONTEXT_H

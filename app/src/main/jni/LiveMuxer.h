@@ -25,6 +25,7 @@ extern "C" {
 
 class LiveMuxer{
 public:
+    static void audioFrameCallback(void *buf, int32_t size, void* userData);
     LiveMuxer();
     ~LiveMuxer();
     void setMuxerInfo(const LiveMuxerInfo& muxerInfo);

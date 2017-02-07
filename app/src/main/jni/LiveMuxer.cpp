@@ -31,6 +31,13 @@ void LiveMuxer::vEncodeThreadCallback(void *pMuxer){
 	av_packet_unref(&output_packet);
 }
 
+void LiveMuxer::audioFrameCallback(void *buf, int32_t size, void* userData){
+    LiveMuxer * pLiveMuxer = (LiveMuxer*)userData;
+    if(pLiveMuxer){
+
+    }
+}
+
 LiveMuxer::LiveMuxer():mFormatContext(NULL),
                        mAudioStream(NULL),
                        mVideoStream(NULL),
@@ -71,11 +78,11 @@ bool LiveMuxer::start() {
     mAudioEncoder.setChannelNumber(mMuxerInfo.audioChannelNumber);
     mAudioEncoder.setBytePerSample(mMuxerInfo.audioBytesPerSample);
     mAudioEncoder.setBitrate(mMuxerInfo.audioBitrate);
-//    if(!mAudioEncoder.initEncoder()){
-//        release();
-//        LOGE("%s aencoder init err", __FUNCTION__);
-//        return false;
-//    }
+    if(!mAudioEncoder.initEncoder()){
+        release();
+        LOGE("%s aencoder init err", __FUNCTION__);
+        return false;
+    }
     mVideoEncoder.setSrcVideoSize(mMuxerInfo.videoSrcWidth, mMuxerInfo.videoSrcHeight);
     mVideoEncoder.setDstVideoSize(mMuxerInfo.videoDstWidth, mMuxerInfo.videoDstHeight);
     mVideoEncoder.setBitrate(mMuxerInfo.voideoBitrate);
@@ -105,7 +112,7 @@ bool LiveMuxer::start() {
     mFormatContext->pb = avioContext;
     memcpy(mFormatContext->filename, mMuxerInfo.muxerUri.c_str(), mMuxerInfo.muxerUri.size());
 
-/*    mAudioStream = avformat_new_stream(mFormatContext, mAudioEncoder.getAVCodec());
+    mAudioStream = avformat_new_stream(mFormatContext, mAudioEncoder.getAVCodec());
     if(!mAudioStream){
         release();
         LOGE("%s new astream err", __FUNCTION__);
@@ -116,7 +123,12 @@ bool LiveMuxer::start() {
     mAudioStream->codec->codec_tag = 0;
     if (mFormatContext->oformat->flags & AVFMT_GLOBALHEADER) {
         mAudioStream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
-    }*/
+    }
+    if(!mAudioEncoder.initEncoderContext(mAudioStream->codec)){
+        release();
+        LOGE("%s init aenctx err", __FUNCTION__);
+        return false;
+    }
 
     mVideoStream = avformat_new_stream(mFormatContext, mVideoEncoder.getAVCodec());
     if(!mVideoStream){
