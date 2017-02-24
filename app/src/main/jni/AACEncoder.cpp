@@ -5,13 +5,21 @@
 /* check that a given sample format is supported by the encoder */
 static int check_sample_fmt(AVCodec *codec, enum AVSampleFormat sample_fmt){
 	const enum AVSampleFormat *p = codec->sample_fmts;
+	LOGE("%s srcFmt %d", __FUNCTION__, (int)sample_fmt);
 
 	while (*p != AV_SAMPLE_FMT_NONE) {
 		if (*p == sample_fmt)
 			return 1;
+		LOGE("%s sopported Fmt %d", __FUNCTION__, (int)(*p));
 		p++;
 	}
 	return 0;
+}
+
+/* check that a given sample format is supported by the encoder */
+static AVSampleFormat get_sample_fmt(AVCodec *codec){
+	const enum AVSampleFormat *p = codec->sample_fmts;
+	return *p;
 }
 
 /* just pick the highest supported samplerate */
@@ -39,7 +47,10 @@ AACEncoder::AACEncoder():
 	mBytesPerSample(2),
 	mBitrate(128000),
 	mCodec(NULL),
-	mCodecContext(NULL){
+	mCodecContext(NULL),
+	mSrcFormat(AV_SAMPLE_FMT_S16),
+	mSwrCtx(NULL),
+	mDstFrame(NULL){
 }
 
 AACEncoder::~AACEncoder(){
@@ -63,17 +74,11 @@ bool AACEncoder::initEncoderContext(AVCodecContext *codecContext){
 		return false;
 	}
 
-	/* put sample parameters */
 	mCodecContext->bit_rate = mBitrate;
-
-	/* check that the encoder supports s16 pcm input */
-	mCodecContext->sample_fmt = AV_SAMPLE_FMT_S16;
-	if (!check_sample_fmt(mCodec, mCodecContext->sample_fmt)) {
-		release();
-
-		LOGE("%s Encoder does not support sample format %s",
-			 __FUNCTION__, av_get_sample_fmt_name(mCodecContext->sample_fmt));
-		return false;
+	mCodecContext->sample_fmt = mSrcFormat;
+	if (!check_sample_fmt(mCodec, mSrcFormat)) {
+		LOGE("%s Src Fmt %d no used", __FUNCTION__, (int)(mSrcFormat));
+		mCodecContext->sample_fmt = get_sample_fmt(mCodec);
 	}
 
 	/* select other audio parameters supported by the encoder */
@@ -99,6 +104,36 @@ bool AACEncoder::initEncoderContext(AVCodecContext *codecContext){
 		return false;
 	}
 
+	if(mSampleRate != mCodecContext->sample_rate || mSrcFormat != mCodecContext->sample_fmt){
+		mSwrCtx = swr_alloc();
+		if (!mSwrCtx) {
+			release();
+			LOGE("%s Could not allocate resampler context", __FUNCTION__);
+			return false;
+		}
+		/* set options */
+		av_opt_set_int(mSwrCtx, "in_channel_layout",    mCodecContext->channel_layout, 0);
+		av_opt_set_int(mSwrCtx, "in_sample_rate",       mSampleRate, 0);
+		av_opt_set_sample_fmt(mSwrCtx, "in_sample_fmt", mSrcFormat, 0);
+
+		av_opt_set_int(mSwrCtx, "out_channel_layout",    mCodecContext->channel_layout, 0);
+		av_opt_set_int(mSwrCtx, "out_sample_rate",       mCodecContext->sample_rate, 0);
+		av_opt_set_sample_fmt(mSwrCtx, "out_sample_fmt", mCodecContext->sample_fmt, 0);
+
+		/* initialize the resampling context */
+		if (swr_init(mSwrCtx) < 0) {
+			release();
+			LOGE("%s Failed to initialize the resampling context", __FUNCTION__);
+			return false;
+		}
+		mDstFrame = av_frame_alloc();
+		mDstFrame->nb_samples = mCodecContext->frame_number;
+		mDstFrame->sample_rate = mCodecContext->sample_rate;
+		mDstFrame->format = mCodecContext->sample_fmt;
+		mDstFrame->channel_layout = mCodecContext->channel_layout;
+		av_frame_get_buffer(mDstFrame, 16);
+	}
+
 	return true;
 }
 
@@ -107,6 +142,14 @@ void AACEncoder::release(){
 	    avcodec_close(mCodecContext);
 	    av_free(mCodecContext);
 	    mCodecContext = NULL;
+	}
+	if(mSwrCtx) {
+		swr_free(&mSwrCtx);
+		mSwrCtx = NULL;
+	}
+	if(mDstFrame){
+		av_free(mDstFrame);
+		mDstFrame = NULL;
 	}
 }
 
@@ -118,7 +161,14 @@ bool AACEncoder::encode(AVPacket *avpkt, const AVFrame *srcFrame){
         return false;
 	}
 	/* encode the samples */
-	ret = avcodec_encode_audio2(mCodecContext, avpkt, srcFrame, &got_output);
+	if(mSwrCtx && mDstFrame){
+		uint8_t **src_data = srcFrame->extended_data;
+		uint8_t **dst_data = mDstFrame->data;
+		swr_convert(mSwrCtx, dst_data, mDstFrame->nb_samples, (const uint8_t **)src_data, srcFrame->nb_samples);
+		ret = avcodec_encode_audio2(mCodecContext, avpkt, mDstFrame, &got_output);
+	}else {
+		ret = avcodec_encode_audio2(mCodecContext, avpkt, srcFrame, &got_output);
+	}
 	if (ret < 0) {
 	    LOGE("%s Error encoding audio frame",__FUNCTION__);
 	    return false;

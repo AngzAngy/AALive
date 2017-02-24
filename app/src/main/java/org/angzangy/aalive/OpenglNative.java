@@ -6,7 +6,11 @@ package org.angzangy.aalive;
 
 public class OpenglNative {
     static {
-        System.loadLibrary("aalive");
+        try {
+            System.loadLibrary("aalive");
+        }catch (Throwable e){
+            e.printStackTrace();
+        }
     }
     private long nativeObj;
     public OpenglNative(){

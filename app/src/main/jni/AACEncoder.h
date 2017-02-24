@@ -8,6 +8,7 @@ extern "C" {
 #include <libavutil/imgutils.h>
 #include <libavutil/mathematics.h>
 #include <libavutil/samplefmt.h>
+#include <libswresample/swresample.h>
 }
 #ifndef __AA_AAC_ENCODER_H
 #define __AA_AAC_ENCODER_H
@@ -28,6 +29,9 @@ public:
 	void setBitrate(int biterate) {
 		mBitrate = biterate;
 	}
+	void setSampleFormat(AVSampleFormat format){
+		mSrcFormat = format;
+	}
 	AVCodec *getAVCodec(){
 		return mCodec;
 	}
@@ -43,8 +47,11 @@ private:
 	int mChannelNumber;
 	int mBytesPerSample;
 	int mBitrate;
+	AVSampleFormat mSrcFormat;
 	AVCodec *mCodec;
 	AVCodecContext *mCodecContext;
+	SwrContext *mSwrCtx;
+	AVFrame *mDstFrame;
 };
 
 #endif

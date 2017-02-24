@@ -30,7 +30,7 @@ public:
     ~LiveMuxer();
     void setMuxerInfo(const LiveMuxerInfo& muxerInfo);
     void queueVideoFrame(const char* rgbabuf, const int bufBytes);
-    void queueAudioFrame();
+    void queueAudioFrame(const char* buf, const int bufBytes);
 
     bool start();
     bool stop();
@@ -39,8 +39,10 @@ private:
     static void aEncodeThreadCallback(void *pMuxer);
     static void vEncodeThreadCallback(void *pMuxer);
 
+    bool encodeAudioFrame(AVPacket *avpkt);
     bool encodeVideoFrame(AVPacket *avpkt);
     bool writeMuxerFrame(AVPacket *pPacket, bool bIsAudio);
+    AVFrame* allocAudioFrame(int frameSize);
     AVFrame* allocVideoFrame();
     LiveMuxerInfo mMuxerInfo;
     AVFormatContext *mFormatContext;
@@ -56,6 +58,13 @@ private:
     AA::Mutex mMuxerMutex;
 
     std::vector<AVFrame*> mAudioFrames;
+    int mAudioWritePos;
+    int mAudioReadPos;
+    int mAudioFramesCount;
+    int64_t mAudioArrivedTime;
+    int64_t	mAudioBeginTime;
+    AA::Mutex mAudioFramesMutex;
+    AA::Condition mAudioFramesCondition;
     std::vector<AVFrame*> mVideoFrames;
     int mVideoWritePos;
     int mVideoReadPos;

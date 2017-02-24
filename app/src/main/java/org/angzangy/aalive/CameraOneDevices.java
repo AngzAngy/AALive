@@ -53,7 +53,11 @@ public class CameraOneDevices implements ICameraDevices,
             mOpenglNative = new OpenglNative();
             android.util.Log.e("AALive", "ainit mOpenglNative---3");
         }catch (Exception e){
-
+            if(mCamera != null){
+                stopCameraPreview();
+                releaseCamera();
+            }
+            e.printStackTrace();
         }
     }
 
@@ -70,7 +74,7 @@ public class CameraOneDevices implements ICameraDevices,
             msg.arg2 = mOptimalPreviewSize.height;
             msg.sendToTarget();
 
-            Log.i(TAG,parameters.flatten());
+            Log.e(TAG,parameters.flatten());
         }
     }
 

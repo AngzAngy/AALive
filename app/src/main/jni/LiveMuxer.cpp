@@ -10,10 +10,17 @@ static int decode_interrupt_cb(void *pMuxer) {
 }
 
 void LiveMuxer::aEncodeThreadCallback(void *pMuxer){
- /*   LiveMuxer *pLiveMuxer = (LiveMuxer*)pLiveMuxer;
+    LiveMuxer *pLiveMuxer = (LiveMuxer*)pMuxer;
+    AVPacket outputPkt;
+    av_init_packet(&outputPkt);
+    outputPkt.data = NULL;
+    outputPkt.size = 0;
     if(pLiveMuxer){
-
-    }*/
+        if(pLiveMuxer->encodeAudioFrame(&outputPkt)){
+            pLiveMuxer->writeMuxerFrame(&outputPkt, true);
+        }
+    }
+    av_packet_unref(&outputPkt);
 }
 
 void LiveMuxer::vEncodeThreadCallback(void *pMuxer){
@@ -34,18 +41,24 @@ void LiveMuxer::vEncodeThreadCallback(void *pMuxer){
 void LiveMuxer::audioFrameCallback(void *buf, int32_t size, void* userData){
     LiveMuxer * pLiveMuxer = (LiveMuxer*)userData;
     if(pLiveMuxer){
-
+        pLiveMuxer->queueAudioFrame((const char*) buf, (const int) size);
     }
 }
 
 LiveMuxer::LiveMuxer():mFormatContext(NULL),
                        mAudioStream(NULL),
                        mVideoStream(NULL),
+                       mAudioWritePos(0),
+                       mAudioReadPos(0),
+                       mAudioFramesCount(0),
+                       mAudioArrivedTime(-1),
+                       mAudioBeginTime(-1),
                        mVideoWritePos(0),
                        mVideoReadPos(0),
                        mVideoFramesCount(0),
                        mVideoArrivedTime(-1),
                        mVideoBeginTime(-1){
+  LOGE("%s LiveMuxer Constructor", __FUNCTION__);
 }
 
 LiveMuxer::~LiveMuxer() {
@@ -66,13 +79,6 @@ bool LiveMuxer::start() {
     avcodec_register_all();
     avformat_network_init();
 	av_log_set_level(AV_LOG_DEBUG);
-
-	for(int i=0; i < 2; i++){
-        AVFrame *pFrame = allocVideoFrame();
-        if(pFrame) {
-            mVideoFrames.push_back(pFrame);
-        }
-    }
 
     mAudioEncoder.setSampleRate(mMuxerInfo.audioSampleRate);
     mAudioEncoder.setChannelNumber(mMuxerInfo.audioChannelNumber);
@@ -148,6 +154,17 @@ bool LiveMuxer::start() {
         return false;
     }
 
+    for(int i=0; i < 2; i++){
+        AVFrame *pVFrame = allocVideoFrame();
+        if(pVFrame) {
+            mVideoFrames.push_back(pVFrame);
+        }
+        AVFrame *pAFrame = allocAudioFrame(mAudioStream->codec->frame_number);
+        if(pAFrame){
+            mAudioFrames.push_back(pAFrame);
+        }
+    }
+
     if(avformat_write_header(mFormatContext, NULL) < 0){
         release();
         LOGE("%s write header err", __FUNCTION__);
@@ -185,6 +202,14 @@ void LiveMuxer::release() {
         avformat_free_context(mFormatContext);
         mFormatContext = NULL;
     }
+    for(std::vector<AVFrame*>::iterator it = mAudioFrames.begin(); it != mAudioFrames.end(); ++it){
+        AVFrame *frame = *it;
+        if(frame){
+            av_free(frame);
+        }
+    }
+    mAudioFrames.clear();
+    mAudioBeginTime = -1;
     for(std::vector<AVFrame*>::iterator it = mVideoFrames.begin(); it != mVideoFrames.end(); ++it){
         AVFrame *frame = *it;
         if(frame){
@@ -240,6 +265,28 @@ bool LiveMuxer::writeMuxerFrame(AVPacket *pPacket, bool bIsAudio){
         return false;
     }
     return true;
+}
+
+AVFrame* LiveMuxer::allocAudioFrame(int frameSize){
+    AVFrame *pFrame = av_frame_alloc();
+    if(pFrame){
+        pFrame->nb_samples = frameSize;
+        pFrame->sample_rate = mMuxerInfo.audioSampleRate;
+        pFrame->format = AV_SAMPLE_FMT_S16;
+        switch(mMuxerInfo.audioChannelNumber){
+            case 1:
+                pFrame->channel_layout = AV_CH_LAYOUT_MONO;
+                break;
+            case 2:
+                pFrame->channel_layout = AV_CH_LAYOUT_STEREO;
+                break;
+            default:
+                pFrame->channel_layout = AV_CH_LAYOUT_MONO;
+                break;
+        }
+        av_frame_get_buffer(pFrame, 16);
+    }
+    return pFrame;
 }
 
 AVFrame* LiveMuxer::allocVideoFrame(){
@@ -327,6 +374,51 @@ bool LiveMuxer::encodeVideoFrame(AVPacket *avpkt){
     return ret;
 }
 
-void LiveMuxer::queueAudioFrame(){
+void LiveMuxer::queueAudioFrame(const char* buf, const int bufBytes){
+    mAudioFramesMutex.lock();
+    AVFrame *frame = mAudioFrames[mAudioWritePos];
+    try {
+        if (frame) {
+            mAudioArrivedTime = currentUsec();
+            if(mAudioBeginTime == -1){
+                mAudioBeginTime = mAudioArrivedTime;
+            }
+            int64_t audioDifferTime = mAudioArrivedTime - mAudioBeginTime;
+            if(frame->extended_data[0]){
+                memcpy(frame->extended_data[0], buf, bufBytes);
+            }
+            frame->pts = audioDifferTime / 1000;
 
+            mAudioWritePos = (++mAudioWritePos) % mAudioFrames.size();
+            mAudioFramesCount++;
+
+            mAudioFramesCondition.signal();
+        }
+    }catch (...){
+    }
+
+    mAudioFramesMutex.unlock();
+}
+
+bool LiveMuxer::encodeAudioFrame(AVPacket *avpkt){
+    bool ret = false;
+    mAudioFramesMutex.lock();
+
+    while(mAudioFramesCount <= 0){
+        mAudioFramesCondition.wait(mAudioFramesMutex);
+    }
+
+    try {
+        AVFrame *frame = mAudioFrames[mAudioReadPos];
+        mAudioReadPos = (++mAudioReadPos) % mAudioFrames.size();
+        mAudioFramesCount--;
+
+        ret = mAudioEncoder.encode(avpkt, frame);
+    }catch(...){
+
+    }
+
+    mAudioFramesMutex.unlock();
+
+    return ret;
 }

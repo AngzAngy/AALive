@@ -6,6 +6,11 @@ LOCAL_SRC_FILES := libx264/lib/libx264.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
+LOCAL_MODULE := faac
+LOCAL_SRC_FILES := libfaac/lib/libfaac.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
 LOCAL_MODULE := avutil
 LOCAL_SRC_FILES := ffmpeg/lib/libavutil.a
 include $(PREBUILT_STATIC_LIBRARY)
@@ -28,7 +33,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := avcodec
 LOCAL_SRC_FILES := ffmpeg/lib/libavcodec.a
 LOCAL_LDLIBS := -lm -lz
-LOCAL_STATIC_LIBRARIES := avutil swresample x264
+LOCAL_STATIC_LIBRARIES := avutil swresample x264 faac
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
@@ -67,5 +72,5 @@ LOCAL_SRC_FILES := CommonGlobaldef.cpp \
 
 LOCAL_LDLIBS := -llog  -landroid -lz -lGLESv2 -lOpenSLES
 
-LOCAL_STATIC_LIBRARIES := avcodec avfilter avformat avutil swresample swscale x264
+LOCAL_STATIC_LIBRARIES := avcodec avfilter avformat avutil swresample swscale x264 faac
 include $(BUILD_SHARED_LIBRARY)
