@@ -25,7 +25,7 @@ public class CameraOneDevices implements ICameraDevices,
     private Camera.Size mOptimalPreviewSize;
     private ArrayList<byte[]> mPreviewBuffers = new ArrayList<byte[]>();
     private int mBufferIndex;
-    private OpenglNative mOpenglNative;
+    private LiveTelecastNative mLiveTelecastNative;
     public CameraOneDevices(){
         mHandlerThread = new HandlerThread("camera-one-thread");
         mHandlerThread.start();
@@ -47,11 +47,11 @@ public class CameraOneDevices implements ICameraDevices,
         try {
             mCamera=Camera.open(mCameraId);
 
-            if(mOpenglNative != null){
-                mOpenglNative.release();
+            if(mLiveTelecastNative != null){
+                mLiveTelecastNative.release();
             }
-            mOpenglNative = new OpenglNative();
-            android.util.Log.e("AALive", "ainit mOpenglNative---3");
+            mLiveTelecastNative = new LiveTelecastNative();
+            android.util.Log.e("AALive", "ainit mLiveTelecastNative---3");
         }catch (Exception e){
             if(mCamera != null){
                 stopCameraPreview();
@@ -106,8 +106,8 @@ public class CameraOneDevices implements ICameraDevices,
 
     @Override
     public void releaseCamera() {
-        if(mOpenglNative != null){
-            mOpenglNative.release();
+        if(mLiveTelecastNative != null){
+            mLiveTelecastNative.release();
         }
         if(mCamera!=null){
             mCamera.release();
@@ -169,17 +169,17 @@ public class CameraOneDevices implements ICameraDevices,
             super.handleMessage(msg);
             switch (msg.what){
                 case SET_PREVIEW_SIZE_WHAT:
-                    if(mOpenglNative != null){
-                        android.util.Log.e("AALive", "ainit onSurfaceChanged---0");
-                        mOpenglNative.onSurfaceChanged(msg.arg1, msg.arg2);
-                        android.util.Log.e("AALive", "ainit onSurfaceChanged---1");
+                    if(mLiveTelecastNative != null){
+                        android.util.Log.e("AALive", "ainit onPreviewSizeChanged---0");
+                        mLiveTelecastNative.onPreviewSizeChanged(msg.arg1, msg.arg2);
+                        android.util.Log.e("AALive", "ainit onPreviewSizeChanged---1");
                         mHasPreviewSize = true;
                     }
                     break;
                 case ON_PREVIEW_FRAME_WHAT:
                     if(mHasPreviewSize){
                         byte []bytes = (byte[])msg.obj;
-                        mOpenglNative.pushNV21Buffer(bytes, msg.arg1, msg.arg2);
+                        mLiveTelecastNative.pushNV21Buffer(bytes, msg.arg1, msg.arg2);
                     }
                     addCallbackBuffer();
                     break;

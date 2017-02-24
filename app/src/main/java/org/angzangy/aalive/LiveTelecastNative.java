@@ -4,7 +4,8 @@ package org.angzangy.aalive;
  * Created on 2017/1/18.
  */
 
-public class OpenglNative {
+public class LiveTelecastNative {
+    private final static String RTMP_URL = "rtmp://172.17.72.20:1935/myapp/test2";
     static {
         try {
             System.loadLibrary("aalive");
@@ -13,14 +14,14 @@ public class OpenglNative {
         }
     }
     private long nativeObj;
-    public OpenglNative(){
+    public LiveTelecastNative(){
         init();
+        setRtmpUrl(RTMP_URL);
     }
     private native void init();
     public native void release();
 
-    public native void onSurfaceCreated();
-    public native void onSurfaceChanged(int width, int height);
-    public native void onDrawFrame();
+    public native void setRtmpUrl(String url);
+    public native void onPreviewSizeChanged(int width, int height);
     public native void pushNV21Buffer(byte[] buffer, int with, int height);
 }

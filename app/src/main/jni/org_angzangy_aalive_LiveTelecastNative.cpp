@@ -1,4 +1,4 @@
-#include "org_angzangy_aalive_OpenglNative.h"
+#include "org_angzangy_aalive_LiveTelecastNative.h"
 #include "AALog.h"
 #include "NativeContext.h"
 #include <GLES2/gl2.h>
@@ -28,11 +28,11 @@ static void setNativePrt(JNIEnv *jniEnv, jobject jobj, NativeContext *ptr){
     }
 }
 /*
- * Class:     org_angzangy_aalive_OpenglNative
+ * Class:     org_angzangy_aalive_LiveTelecastNative
  * Method:    init
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_init
+JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_init
         (JNIEnv *jniEnv, jobject jobj){
     jclass jclazz = jniEnv->GetObjectClass(jobj);
     localfields.nativePrt = jniEnv->GetFieldID(jclazz, "nativeObj", "J");
@@ -45,7 +45,6 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_init
         LOGE("%s new err", __FUNCTION__);
         return;
     }
-    ptr->liveMuxerInfo.muxerUri = "rtmp://172.17.72.23:1935/myapp/test2";
     ptr->liveMuxerInfo.audioSampleRate = 44100;
     ptr->liveMuxerInfo.audioBytesPerSample = 2;
     ptr->liveMuxerInfo.audioChannelNumber = 1;
@@ -59,11 +58,11 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_init
 }
 
 /*
- * Class:     org_angzangy_aalive_OpenglNative
+ * Class:     org_angzangy_aalive_LiveTelecastNative
  * Method:    release
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_release
+JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_release
         (JNIEnv *jniEnv, jobject jobj){
     NativeContext * ptr = getNativePtr(jniEnv, jobj);
     if(ptr){
@@ -79,20 +78,35 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_release
 }
 
 /*
- * Class:     org_angzangy_aalive_OpenglNative
- * Method:    onSurfaceCreated
- * Signature: ()V
+ * Class:     org_angzangy_aalive_LiveTelecastNative
+ * Method:    release
+ * Signature: (Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_onSurfaceCreated
-        (JNIEnv *jniEnv, jobject jobj){
+JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_setRtmpUrl
+        (JNIEnv *jniEnv, jobject jobj, jstring jurl){
+    NativeContext * ptr = getNativePtr(jniEnv, jobj);
+    if(ptr && jurl){
+        const char *url = jniEnv->GetStringUTFChars(jurl, 0);
+        ptr->liveMuxerInfo.muxerUri = url;
+        jniEnv->ReleaseStringUTFChars(jurl, url);
+    }
 }
 
 /*
- * Class:     org_angzangy_aalive_OpenglNative
- * Method:    onSurfaceChanged
+ * Class:     org_angzangy_aalive_LiveTelecastNative
+ * Method:    onSurfaceCreated
+ * Signature: ()V
+ */
+//JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_onSurfaceCreated
+//        (JNIEnv *jniEnv, jobject jobj){
+//}
+
+/*
+ * Class:     org_angzangy_aalive_LiveTelecastNative
+ * Method:    onPreviewSizeChanged
  * Signature: (II)V
  */
-JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_onSurfaceChanged
+JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_onPreviewSizeChanged
         (JNIEnv *jniEnv, jobject jobj, jint jsurfaceWidth, jint jsurfaceHeight){
     NativeContext * ptr = getNativePtr(jniEnv, jobj);
     if(ptr){
@@ -112,32 +126,32 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_onSurfaceChanged
     }
 }
 /*
- * Class:     org_angzangy_aalive_OpenglNative
+ * Class:     org_angzangy_aalive_LiveTelecastNative
  * Method:    onDrawFrame
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_onDrawFrame
-  (JNIEnv *jniEnv, jobject jobj){
-    NativeContext * ptr = getNativePtr(jniEnv, jobj);
-    if(ptr){
-        GLsizei width = ptr->liveMuxerInfo.videoSrcWidth;
-        GLsizei height = ptr->liveMuxerInfo.videoSrcHeight;
-        if(NULL == ptr->videoRawBuf){
-            ptr->videoRawBuf = new char[width * height * 4];
-            ptr->videoRawBufBytes = width * height * 4;
-        }
-        GLvoid* pixels = (GLvoid*)ptr->videoRawBuf;
-        glReadPixels (0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-        ptr->liveMuxer.queueVideoFrame(ptr->videoRawBuf, ptr->videoRawBufBytes);
-    }
-}
+//JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_onDrawFrame
+//  (JNIEnv *jniEnv, jobject jobj){
+//    NativeContext * ptr = getNativePtr(jniEnv, jobj);
+//    if(ptr){
+//        GLsizei width = ptr->liveMuxerInfo.videoSrcWidth;
+//        GLsizei height = ptr->liveMuxerInfo.videoSrcHeight;
+//        if(NULL == ptr->videoRawBuf){
+//            ptr->videoRawBuf = new char[width * height * 4];
+//            ptr->videoRawBufBytes = width * height * 4;
+//        }
+//        GLvoid* pixels = (GLvoid*)ptr->videoRawBuf;
+//        glReadPixels (0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+//        ptr->liveMuxer.queueVideoFrame(ptr->videoRawBuf, ptr->videoRawBufBytes);
+//    }
+//}
 
 /*
- * Class:     org_angzangy_aalive_OpenglNative
+ * Class:     org_angzangy_aalive_LiveTelecastNative
  * Method:    pushNV21Buffer
  * Signature: ([BII)V
  */
-JNIEXPORT void JNICALL Java_org_angzangy_aalive_OpenglNative_pushNV21Buffer
+JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_pushNV21Buffer
   (JNIEnv *jniEnv, jobject jobj, jbyteArray jbuffer, jint jw, jint jh){
     NativeContext * ptr = getNativePtr(jniEnv, jobj);
     if(ptr && jbuffer){

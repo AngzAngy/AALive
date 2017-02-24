@@ -68,7 +68,7 @@ LOCAL_SRC_FILES := CommonGlobaldef.cpp \
                    LiveMuxerInfo.cpp \
                    LiveMuxer.cpp \
                    AudioRecord.cpp \
-                   org_angzangy_aalive_OpenglNative.cpp
+                   org_angzangy_aalive_LiveTelecastNative.cpp
 
 LOCAL_LDLIBS := -llog  -landroid -lz -lGLESv2 -lOpenSLES
 
