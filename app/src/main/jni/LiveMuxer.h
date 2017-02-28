@@ -19,6 +19,7 @@ extern "C" {
 #include "LiveMuxerInfo.h"
 #include "AACEncoder.h"
 #include "H264Encoder.h"
+#include "libyuv.h"
 
 #ifndef AALIVE_LIVEMUXER_H
 #define AALIVE_LIVEMUXER_H
@@ -29,7 +30,8 @@ public:
     LiveMuxer();
     ~LiveMuxer();
     void setMuxerInfo(const LiveMuxerInfo& muxerInfo);
-    void queueVideoFrame(const char* rgbabuf, const int bufBytes);
+    void queueVideoFrame(const char* y, const char* vu,
+                         const int width, const int height);
     void queueAudioFrame(const char* buf, const int bufBytes);
 
     bool start();

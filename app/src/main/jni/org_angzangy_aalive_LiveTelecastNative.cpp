@@ -107,13 +107,14 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_setRtmpUrl
  * Signature: (II)V
  */
 JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_onPreviewSizeChanged
-        (JNIEnv *jniEnv, jobject jobj, jint jsurfaceWidth, jint jsurfaceHeight){
+        (JNIEnv *jniEnv, jobject jobj, jint jpreviewWidth, jint jpreviewHeight){
     NativeContext * ptr = getNativePtr(jniEnv, jobj);
     if(ptr){
-        ptr->liveMuxerInfo.videoSrcWidth = jsurfaceWidth;
-        ptr->liveMuxerInfo.videoSrcHeight = jsurfaceHeight;
-        ptr->liveMuxerInfo.videoDstWidth = jsurfaceWidth;
-        ptr->liveMuxerInfo.videoDstHeight = jsurfaceHeight;
+        //we need rotate preview
+        ptr->liveMuxerInfo.videoSrcWidth = jpreviewWidth;
+        ptr->liveMuxerInfo.videoSrcHeight = jpreviewHeight;
+        ptr->liveMuxerInfo.videoDstWidth = jpreviewWidth;
+        ptr->liveMuxerInfo.videoDstHeight = jpreviewHeight;
         ptr->liveMuxerInfo.voideoBitrate = 400000;
         ptr->videoRawBuf = NULL;
 
@@ -156,7 +157,7 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_pushNV21Buffe
     NativeContext * ptr = getNativePtr(jniEnv, jobj);
     if(ptr && jbuffer){
         jbyte* buffer = jniEnv->GetByteArrayElements(jbuffer, NULL);
-        ptr->liveMuxer.queueVideoFrame((const char *)buffer, jw * jh * 3 / 2);
+        ptr->liveMuxer.queueVideoFrame((const char *)buffer, (const char *)buffer + jw * jh, jw, jh);
         jniEnv->ReleaseByteArrayElements(jbuffer, buffer, 0);
     }
  }

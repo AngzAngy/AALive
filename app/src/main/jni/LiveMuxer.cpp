@@ -300,7 +300,8 @@ AVFrame* LiveMuxer::allocVideoFrame(){
     return pFrame;
 }
 
-void LiveMuxer::queueVideoFrame(const char* rgbabuf, const int bufBytes){
+void LiveMuxer::queueVideoFrame(const char* y, const char* vu,
+                                 const int width, const int height){
     mVideoFramesMutex.lock();
     AVFrame *frame = mVideoFrames[mVideoWritePos];
     try {
@@ -310,31 +311,20 @@ void LiveMuxer::queueVideoFrame(const char* rgbabuf, const int bufBytes){
                 mVideoBeginTime = mVideoArrivedTime;
             }
             int64_t videoDifferTime = mVideoArrivedTime - mVideoBeginTime;
-            if(frame->format == AV_PIX_FMT_RGBA) {
-                int ppb = (frame->width) * 4;
-                uint8_t *src = (uint8_t *) rgbabuf;
-                uint8_t *dst = frame->data[0];
-                for (int x = 0; x < frame->height; x++) {
-                    memcpy(dst, src, ppb);
-                    src += ppb;
-                    dst += frame->linesize[0];
-                }
-            } else if(frame->format == AV_PIX_FMT_NV21){
-                int frameSize = frame->width * frame->height;
-                uint8_t *srcY = (uint8_t *) rgbabuf;
-                uint8_t *srcUV = srcY + frameSize;
-                uint8_t *dstY = frame->data[0];
-                uint8_t *dstUV = frame->data[1];
-                for (int x = 0; x < frame->height; x++) {
-                    memcpy(dstY, srcY, frame->width);
-                    dstY += frame->linesize[0];
-                    srcY += frame->width;
 
-                    if(x % 2 == 0){
-                        memcpy(dstUV, srcUV, frame->width);
-                        srcUV += frame->width;
-                        dstUV += frame->linesize[1];
-                    }
+            uint8_t *srcY = (uint8_t *) y;
+            uint8_t *srcUV = (uint8_t *) vu;
+            uint8_t *dstY = frame->data[0];
+            uint8_t *dstUV = frame->data[1];
+            for (int x = 0; x < frame->height; x++) {
+                memcpy(dstY, srcY, frame->width);
+                dstY += frame->linesize[0];
+                srcY += width;
+
+                if(x % 2 == 0){
+                    memcpy(dstUV, srcUV, frame->width);
+                    srcUV += width;
+                    dstUV += frame->linesize[1];
                 }
             }
 
