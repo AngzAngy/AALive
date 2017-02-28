@@ -1,6 +1,11 @@
 LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
+LOCAL_MODULE := yuv_static
+LOCAL_SRC_FILES := libyuv/lib/libyuv_static.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
 LOCAL_MODULE := x264
 LOCAL_SRC_FILES := libx264/lib/libx264.a
 include $(PREBUILT_STATIC_LIBRARY)
@@ -58,7 +63,7 @@ LOCAL_DISABLE_FATAL_LINKER_WARNINGS := true
 LOCAL_CFLAGS := -D__STDC_CONSTANT_MACROS -D_ANDROID_
 LOCAL_CPPFLAGS :=  -std=gnu++11 -fexceptions -frtti
 
-LOCAL_C_INCLUDES := $(LOCAL_PATH)/ffmpeg/include
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/ffmpeg/include $(LOCAL_PATH)/libyuv/include
 
 
 LOCAL_SRC_FILES := CommonGlobaldef.cpp \
@@ -72,5 +77,5 @@ LOCAL_SRC_FILES := CommonGlobaldef.cpp \
 
 LOCAL_LDLIBS := -llog  -landroid -lz -lGLESv2 -lOpenSLES
 
-LOCAL_STATIC_LIBRARIES := avcodec avfilter avformat avutil swresample swscale x264 faac
+LOCAL_STATIC_LIBRARIES := avcodec avfilter avformat avutil swresample swscale x264 faac yuv_static
 include $(BUILD_SHARED_LIBRARY)
