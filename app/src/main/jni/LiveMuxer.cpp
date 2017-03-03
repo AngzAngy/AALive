@@ -159,7 +159,9 @@ bool LiveMuxer::start() {
         if(pVFrame) {
             mVideoFrames.push_back(pVFrame);
         }
-        AVFrame *pAFrame = allocAudioFrame(mAudioStream->codec->frame_number);
+        ////this should be attention for the sample count,
+        ////aac should be 1024
+        AVFrame *pAFrame = allocAudioFrame(1024);
         if(pAFrame){
             mAudioFrames.push_back(pAFrame);
         }

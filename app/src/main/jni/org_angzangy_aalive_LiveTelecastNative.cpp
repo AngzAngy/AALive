@@ -45,12 +45,17 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_init
         LOGE("%s new err", __FUNCTION__);
         return;
     }
+    int audioBytesPreSample = 2;
+    int audioChannel = 1;
+    ////this should be attention for the sample count,
+    ////aac should be 1024
+    int bytespreframe = 1024 * audioBytesPreSample * audioChannel;
     ptr->liveMuxerInfo.audioSampleRate = 44100;
-    ptr->liveMuxerInfo.audioBytesPerSample = 2;
-    ptr->liveMuxerInfo.audioChannelNumber = 1;
-    ptr->liveMuxerInfo.audioBitrate = 128000;
+    ptr->liveMuxerInfo.audioBytesPerSample = audioBytesPreSample;
+    ptr->liveMuxerInfo.audioChannelNumber = audioChannel;
+    ptr->liveMuxerInfo.audioBitrate = 32000;
     AudioRecord *pAudioRecord = new AudioRecord(ptr->liveMuxerInfo.audioSampleRate, ptr->liveMuxerInfo.audioBytesPerSample,
-                                                ptr->liveMuxerInfo.audioChannelNumber, 4096);
+                                                ptr->liveMuxerInfo.audioChannelNumber, bytespreframe);
     if(pAudioRecord){
         ptr->audioRecord = pAudioRecord;
     }
@@ -115,7 +120,7 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_onPreviewSize
         ptr->liveMuxerInfo.videoSrcHeight = jpreviewHeight;
         ptr->liveMuxerInfo.videoDstWidth = jpreviewWidth;
         ptr->liveMuxerInfo.videoDstHeight = jpreviewHeight;
-        ptr->liveMuxerInfo.voideoBitrate = 400000;
+        ptr->liveMuxerInfo.voideoBitrate = 128 * 1024;
         ptr->videoRawBuf = NULL;
 
         ptr->liveMuxer.setMuxerInfo((ptr->liveMuxerInfo));

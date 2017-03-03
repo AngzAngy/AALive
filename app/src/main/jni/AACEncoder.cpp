@@ -59,7 +59,7 @@ AACEncoder::~AACEncoder(){
 
 bool AACEncoder::initEncoder(){
 	/* find the AAC encoder */
-	mCodec = avcodec_find_encoder(AV_CODEC_ID_AAC);
+	mCodec = avcodec_find_encoder_by_name("libfaac");//avcodec_find_encoder(AV_CODEC_ID_AAC);
 	if (!mCodec) {
 		LOGE("%s AAC Codec not found", __FUNCTION__);
 		return false;
