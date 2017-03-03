@@ -20,12 +20,14 @@ public class CameraOneDevices implements ICameraDevices,
     private static final String TAG = "CameraOneDevices";
     private int mCameraId;
     private Camera mCamera;
+    private SurfaceTexture mSurfaceTexture;
     private HandlerThread mHandlerThread;
     private CameraHandler mCameraHandler;
     private Camera.Size mOptimalPreviewSize;
     private ArrayList<byte[]> mPreviewBuffers = new ArrayList<byte[]>();
     private int mBufferIndex;
     private LiveTelecastNative mLiveTelecastNative;
+    private OnPreviewSizeChangedListener mOnPreviewSizeChangedListener;
     public CameraOneDevices(){
         mHandlerThread = new HandlerThread("camera-one-thread");
         mHandlerThread.start();
@@ -33,7 +35,7 @@ public class CameraOneDevices implements ICameraDevices,
     }
 
     @Override
-    public void openCamera(int cameraId) {
+    public void openCamera(SurfaceTexture surfaceTexture, int cameraId) {
         if(cameraId == CAMERA_FACING_FRONT) {
             mCameraId = Camera.CameraInfo.CAMERA_FACING_FRONT;
         }
@@ -45,6 +47,7 @@ public class CameraOneDevices implements ICameraDevices,
             releaseCamera();
         }
         try {
+            mSurfaceTexture = surfaceTexture;
             mCamera=Camera.open(mCameraId);
 
             if(mLiveTelecastNative != null){
@@ -69,6 +72,10 @@ public class CameraOneDevices implements ICameraDevices,
             parameters.setPreviewSize(mOptimalPreviewSize.width, mOptimalPreviewSize.height);
             mCamera.setParameters(parameters);
 
+            if(mOnPreviewSizeChangedListener != null){
+                mOnPreviewSizeChangedListener.onPreviewSizeChanged(mOptimalPreviewSize.width, mOptimalPreviewSize.height);
+            }
+
             Message msg = mCameraHandler.obtainMessage(CameraHandler.SET_PREVIEW_SIZE_WHAT);
             msg.arg1 = mOptimalPreviewSize.width;
             msg.arg2 = mOptimalPreviewSize.height;
@@ -80,22 +87,17 @@ public class CameraOneDevices implements ICameraDevices,
 
     @Override
     public void startCameraPreview() {
-        if(mCamera!=null){
+        if(mCamera!=null && mSurfaceTexture != null){
+            try {
+                mCamera.setPreviewTexture(mSurfaceTexture);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             setPreviewCallbackWithBuffer(this);
             mCamera.startPreview();
         }
     }
 
-    @Override
-    public void setCameraPreviewTexture(SurfaceTexture surfaceTexture) {
-        try {
-            if(mCamera!=null) {
-                mCamera.setPreviewTexture(surfaceTexture);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     @Override
     public void stopCameraPreview() {
@@ -116,11 +118,8 @@ public class CameraOneDevices implements ICameraDevices,
     }
 
     @Override
-    public Size getCameraPerviewSize(){
-        if(mOptimalPreviewSize != null){
-            return new Size(mOptimalPreviewSize.width, mOptimalPreviewSize.height);
-        }
-        return null;
+    public void setOnPreviewSizeChangedListener(OnPreviewSizeChangedListener l){
+        mOnPreviewSizeChangedListener = l;
     }
 
     private void setPreviewCallbackWithBuffer(Camera.PreviewCallback cb){
@@ -170,13 +169,12 @@ public class CameraOneDevices implements ICameraDevices,
             switch (msg.what){
                 case SET_PREVIEW_SIZE_WHAT:
                     if(mLiveTelecastNative != null){
-                        android.util.Log.e("AALive", "ainit onPreviewSizeChanged---0");
                         mLiveTelecastNative.onPreviewSizeChanged(msg.arg1, msg.arg2);
-                        android.util.Log.e("AALive", "ainit onPreviewSizeChanged---1");
                         mHasPreviewSize = true;
                     }
                     break;
                 case ON_PREVIEW_FRAME_WHAT:
+//                    android.util.Log.e("AALive", "pushNV21Buffer");
                     if(mHasPreviewSize){
                         byte []bytes = (byte[])msg.obj;
                         mLiveTelecastNative.pushNV21Buffer(bytes, msg.arg1, msg.arg2);

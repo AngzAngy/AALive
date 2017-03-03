@@ -1,11 +1,14 @@
 package org.angzangy.aalive;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import android.app.Activity;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
-import android.hardware.Camera.Size;
 import android.util.Log;
+import android.util.Size;
 import android.view.Display;
 import android.view.OrientationEventListener;
 import android.view.Surface;
@@ -81,14 +84,14 @@ public class CameraUtil {
         return rotation;
     }
 
-    public static Size getOptimalPreviewSize(Activity currentActivity,
-            List<Size> sizes, double targetRatio) {
+    public static Camera.Size getOptimalPreviewSize(Activity currentActivity,
+            List<Camera.Size> sizes, double targetRatio) {
         // Use a very small tolerance because we want an exact match.
         final double ASPECT_TOLERANCE = 0.001;
         if (sizes == null)
             return null;
 
-        Size optimalSize = null;
+        Camera.Size optimalSize = null;
         double minDiff = Double.MAX_VALUE;
 
         // Because of bugs of overlay and layout, we sometimes will try to
@@ -107,7 +110,7 @@ public class CameraUtil {
         }
 
         // Try to find an size match aspect ratio and size
-        for (Size size : sizes) {
+        for (Camera.Size size : sizes) {
             double ratio = (double) size.width / size.height;
             if (Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE)
                 continue;
@@ -122,7 +125,7 @@ public class CameraUtil {
         if (optimalSize == null) {
             Log.v(TAG, "No preview size match the aspect ratio");
             minDiff = Double.MAX_VALUE;
-            for (Size size : sizes) {
+            for (Camera.Size size : sizes) {
                 if (Math.abs(size.height - targetHeight) < minDiff) {
                     optimalSize = size;
                     minDiff = Math.abs(size.height - targetHeight);
@@ -130,5 +133,25 @@ public class CameraUtil {
             }
         }
         return optimalSize;
+    }
+
+    public static Size getLargestSize(Size []sizes){
+        if(sizes == null || sizes.length == 0){
+            return null;
+        }
+        Size largest = Collections.max(Arrays.asList(sizes), new CompareSizesByArea());
+        return largest;
+    }
+    /**
+     * Compares two {@code Size}s based on their areas.
+     */
+    static class CompareSizesByArea implements Comparator<Size> {
+        @Override
+        public int compare(Size lhs, Size rhs) {
+            // We cast here to ensure the multiplications won't overflow
+            return Long.signum((long) lhs.getWidth() * lhs.getHeight() -
+                    (long) rhs.getWidth() * rhs.getHeight());
+        }
+
     }
 }

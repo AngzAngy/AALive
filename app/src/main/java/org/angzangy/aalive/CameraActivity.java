@@ -1,9 +1,14 @@
 package org.angzangy.aalive;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.graphics.SurfaceTexture;
+import android.hardware.camera2.CameraManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.app.ActivityCompat;
+import android.util.Size;
 import android.view.OrientationEventListener;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -63,9 +68,8 @@ implements SurfaceTextureStateChangedListener{
 
     }
 
-    private void resizePreview(){
-        Size size = mCamera.getCameraPerviewSize();
-        float ratio = ((float)size.width)/((float)size.height);
+    private void resizePreview(int width, int height){
+        float ratio = ((float)width)/((float)height);
         ViewGroup.LayoutParams lytParam = mCameraGLView.getLayoutParams();
         lytParam.width=UiUtils.screenWidth();
         lytParam.height=(int)(UiUtils.screenWidth()*ratio);
@@ -75,7 +79,8 @@ implements SurfaceTextureStateChangedListener{
     @Override
     public void onSurfaceTextureCreated(SurfaceTexture surfaceTexture) {
         try {
-            mCamera.setCameraPreviewTexture(surfaceTexture);
+            openCamera(surfaceTexture);
+            setCameraParameter();
             startCameraPreview();
         } catch (Exception e) {
             e.printStackTrace();
@@ -88,13 +93,6 @@ implements SurfaceTextureStateChangedListener{
 
     private void setCameraParameter(){
         mCamera.setCameraParameters();
-        mMainHandler.post(new Runnable(){
-            @Override
-            public void run() {
-                resizePreview();
-            }
-        });
-
     }
 
     private void startCameraPreview(){
@@ -116,13 +114,34 @@ implements SurfaceTextureStateChangedListener{
         }
     }
 
-    private void openCamera(){
+    private void openCamera(SurfaceTexture surfaceTexture){
         if(mCamera != null){
             stopCameraPreview();
             releaseCamera();
         }
-        mCamera = new CameraOneDevices();
-        mCamera.openCamera(ICameraDevices.CAMERA_FACING_FRONT);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        mCamera = new Camera2Devices((CameraManager) getSystemService(Context.CAMERA_SERVICE));//CameraOneDevices();
+        mCamera.setOnPreviewSizeChangedListener(new ICameraDevices.OnPreviewSizeChangedListener() {
+            @Override
+            public void onPreviewSizeChanged(final int width, final int height) {
+                mMainHandler.post(new Runnable(){
+                    @Override
+                    public void run() {
+                        resizePreview(width, height);
+                    }
+                });
+            }
+        });
+        mCamera.openCamera(surfaceTexture, ICameraDevices.CAMERA_FACING_FRONT);
     }
 
     private void releaseCamera(){
@@ -143,8 +162,6 @@ implements SurfaceTextureStateChangedListener{
     public void onResume(){
         super.onResume();
         mOrientationEventListener.enable();
-        openCamera();
-        setCameraParameter();
         mCameraGLView.onResume();
         if(mCameraGLView!=null && mCameraGLView.getSurfaceTexture()!=null){
             onSurfaceTextureCreated(mCameraGLView.getSurfaceTexture());
