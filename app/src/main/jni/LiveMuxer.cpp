@@ -406,16 +406,11 @@ void LiveMuxer::queueVideoFrame(const char* rgba,
             uint8_t *dst_y = frame->data[0];
             uint8_t *dst_u = frame->data[1];
             uint8_t *dst_v = frame->data[2];
-            /*libyuv::RGBAToI420(src_frame, width,
+            libyuv::ABGRToI420(src_frame, width * 4,
                            dst_y, frame->linesize[0],
                            dst_u, frame->linesize[1],
                            dst_v, frame->linesize[2],
-                           width, height);*/
-            rgba2I420(dst_y, frame->linesize[0],
-                               dst_u, frame->linesize[1],
-                               dst_v, frame->linesize[2],
-                               src_frame, width,
-                               width, height);
+                           width, height);
 
             frame->pts = videoDifferTime / 1000;
 
