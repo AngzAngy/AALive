@@ -1,5 +1,7 @@
 package org.angzangy.aalive;
 
+import java.nio.ByteBuffer;
+
 /**
  * Created on 2017/1/18.
  */
@@ -23,5 +25,8 @@ public class LiveTelecastNative {
 
     public native void setRtmpUrl(String url);
     public native void onPreviewSizeChanged(int width, int height);
+    public native void readFbo(int width, int height);
     public native void pushNV21Buffer(byte[] buffer, int with, int height);
+    public native void pushNV21Buffer(ByteBuffer ybuffer, ByteBuffer vubuffer,
+                                      int with, int height);
 }

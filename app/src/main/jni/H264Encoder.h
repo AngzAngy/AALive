@@ -32,6 +32,9 @@ public:
 	void setSrcPixelFormat(AVPixelFormat pixelFormat) {
 		mSrcPixelFormat = pixelFormat;
 	}
+	AVPixelFormat getSrcPixelFormat(){
+	    return mSrcPixelFormat;
+	}
 	AVCodec * getAVCodec(){
 		return mCodec;
 	}

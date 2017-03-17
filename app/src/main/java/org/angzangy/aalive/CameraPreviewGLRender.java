@@ -18,6 +18,12 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
     private SurfaceTexture.OnFrameAvailableListener mOnFrameAvailableListener;
     private SurfaceTextureRenderer mSurfaceRenderer;
     protected float[] mMVPMatrix = new float[16];
+    private float [] mIdentiryMatrix = new float[16];
+    private TextureFbo mTextureFbo;
+    private int mWindowWidth;
+    private int mWindowHeight;
+    private LiveTelecastNative mLiveTelecastNative;
+    private Texture2DRenderer mTexture2DRender;
 
 
     /*
@@ -35,8 +41,15 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
         }
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         if(mSurfaceRenderer != null){
+            GLES20.glViewport(0, 0, mTextureFbo.getWidth(), mTextureFbo.getHeight());
+            mTextureFbo.bindFbo(GLES20.GL_TEXTURE1);
             mSurfaceRenderer.drawTexture2D(mSurfaceTextId, mMVPMatrix);
+            mLiveTelecastNative.readFbo(mTextureFbo.getWidth(), mTextureFbo.getHeight());
+            mTextureFbo.unBindFbo(GLES20.GL_TEXTURE1);
         }
+        GLES20.glViewport(0, 0, mWindowWidth, mWindowHeight);
+//        mSurfaceRenderer.drawTexture2D(mSurfaceTextId, mMVPMatrix);
+        mTexture2DRender.drawTexture2D(mTextureFbo.getTextureId(), mIdentiryMatrix);
     }
 
     /*
@@ -47,7 +60,20 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
      */
     @Override
     public void onSurfaceChanged(GL10 glUnused, int width, int height) {
-        GLES20.glViewport(0, 0, width, height);
+        mWindowWidth = width;
+        mWindowHeight = height;
+        if(mTextureFbo != null){
+            mTextureFbo.delete();
+        }else{
+            mTextureFbo = new TextureFbo();
+        }
+        mTextureFbo.createFbo(640 / 2, 480 / 2, GLES20.GL_TEXTURE_2D);
+
+        if(mLiveTelecastNative != null){
+            mLiveTelecastNative.release();
+        }
+        mLiveTelecastNative = new LiveTelecastNative();
+        mLiveTelecastNative.onPreviewSizeChanged(mTextureFbo.getWidth(), mTextureFbo.getHeight());
     }
 
     /*
@@ -79,13 +105,18 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
                 GLES20.GL_CLAMP_TO_EDGE);
 
         Matrix.setIdentityM(mMVPMatrix, 0);
-        Matrix.rotateM(mMVPMatrix, 0, 270, 0, 0, 1);
+        Matrix.rotateM(mMVPMatrix, 0, 90, 0, 0, 1);
         Matrix.scaleM(mMVPMatrix, 0, 1, -1, 1);
+        Matrix.setIdentityM(mIdentiryMatrix, 0);
         if(mSurfaceRenderer == null){
             mSurfaceRenderer = new SurfaceTextureRenderer();
         }
         mSurfaceRenderer.loadShader(SurfaceTextureRenderer.VertexShader,
                 SurfaceTextureRenderer.OES_FragmentShader);
+
+        mTexture2DRender = new Texture2DRenderer();
+        mTexture2DRender.loadShader(Texture2DRenderer.VertexShader,
+                Texture2DRenderer.BASE_TEXTURE_FragmentShader);
         /*
          * Create the SurfaceTexture that will feed this textureID, and pass it to the camera
          */

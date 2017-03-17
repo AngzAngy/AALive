@@ -140,7 +140,7 @@ bool AACEncoder::initEncoderContext(AVCodecContext *codecContext){
 void AACEncoder::release(){
     if(mCodecContext){
 	    avcodec_close(mCodecContext);
-	    av_free(mCodecContext);
+	    //av_free(mCodecContext);
 	    mCodecContext = NULL;
 	}
 	if(mSwrCtx) {

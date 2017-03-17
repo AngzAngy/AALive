@@ -77,6 +77,7 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_release
             ptr->audioRecord->stop();
             delete (ptr->audioRecord);
         }
+        ptr->releaseVideoRawBuf();
         delete(ptr);
     }
     setNativePrt(jniEnv, jobj, NULL);
@@ -157,7 +158,7 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_onPreviewSize
  * Method:    pushNV21Buffer
  * Signature: ([BII)V
  */
-JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_pushNV21Buffer
+JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_pushNV21Buffer___3BII
   (JNIEnv *jniEnv, jobject jobj, jbyteArray jbuffer, jint jw, jint jh){
     NativeContext * ptr = getNativePtr(jniEnv, jobj);
     if(ptr && jbuffer){
@@ -167,3 +168,38 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_pushNV21Buffe
     }
  }
 
+ /*
+  * Class:     org_angzangy_aalive_LiveTelecastNative
+  * Method:    pushNV21Buffer
+  * Signature: (Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;II)V
+  */
+ JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_pushNV21Buffer__Ljava_nio_ByteBuffer_2Ljava_nio_ByteBuffer_2II
+   (JNIEnv *jniEnv, jobject jobj, jobject ybufobj, jobject vubufobj, jint jw, jint jh){
+    NativeContext * ptr = getNativePtr(jniEnv, jobj);
+    if(ptr && ybufobj && vubufobj){
+        char * y = (char *)jniEnv->GetDirectBufferAddress(ybufobj);
+        char * vu = (char *)jniEnv->GetDirectBufferAddress(vubufobj);
+        ptr->liveMuxer.queueVideoFrame(y, vu, jw, jh);
+    }
+}
+
+  /*
+   * Class:     org_angzangy_aalive_LiveTelecastNative
+   * Method:    readFbo
+   * Signature: (II)V
+   */
+  JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_readFbo
+    (JNIEnv *jniEnv, jobject jobj, jint jfboWidth, jint jfboHeight){
+
+    NativeContext * ptr = getNativePtr(jniEnv, jobj);
+    if(ptr){
+        int rgbabufsize = jfboWidth * jfboHeight * 4;
+        if(ptr->videoRawBuf == NULL || ptr->videoRawBufBytes != rgbabufsize){
+            ptr->releaseVideoRawBuf();
+            ptr->allocVideoRawBuf(rgbabufsize);
+        }
+        char *pixels = ptr->videoRawBuf;
+        glReadPixels (0, 0, (GLsizei)jfboWidth, (GLsizei)jfboHeight, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)pixels);
+        ptr->liveMuxer.queueVideoFrame((const char*)pixels,jfboWidth, jfboHeight);
+    }
+}

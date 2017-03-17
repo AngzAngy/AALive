@@ -59,9 +59,24 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_onPreviewSize
  * Method:    pushNV21Buffer
  * Signature: ([BII)V
  */
-JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_pushNV21Buffer
+JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_pushNV21Buffer___3BII
   (JNIEnv *, jobject, jbyteArray, jint, jint);
 
+/*
+ * Class:     org_angzangy_aalive_LiveTelecastNative
+ * Method:    pushNV21Buffer
+ * Signature: (Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;II)V
+ */
+JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_pushNV21Buffer__Ljava_nio_ByteBuffer_2Ljava_nio_ByteBuffer_2II
+  (JNIEnv *, jobject, jobject, jobject, jint, jint);
+
+  /*
+   * Class:     org_angzangy_aalive_LiveTelecastNative
+   * Method:    readFbo
+   * Signature: (II)V
+   */
+  JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_readFbo
+    (JNIEnv *, jobject, jint, jint);
 #ifdef __cplusplus
 }
 #endif

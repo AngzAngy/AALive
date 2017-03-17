@@ -32,6 +32,8 @@ public:
     void setMuxerInfo(const LiveMuxerInfo& muxerInfo);
     void queueVideoFrame(const char* y, const char* vu,
                          const int width, const int height);
+    void queueVideoFrame(const char* rgba,
+                         const int width, const int height);
     void queueAudioFrame(const char* buf, const int bufBytes);
 
     bool start();

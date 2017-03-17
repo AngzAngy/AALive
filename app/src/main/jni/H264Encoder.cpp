@@ -153,7 +153,7 @@ bool H264Encoder::initEncoderContext(AVCodecContext *codecContext){
 void H264Encoder::release(){
 	if (mCodecContext) {
 		avcodec_close(mCodecContext);
-		av_free(mCodecContext);
+		//av_free(mCodecContext);
 		mCodecContext = NULL;
 	}
 	if (mSwsContext) {

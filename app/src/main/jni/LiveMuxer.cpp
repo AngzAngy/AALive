@@ -4,6 +4,53 @@
 #include "LiveMuxer.h"
 #include "AALog.h"
 #include "CommonGlobaldef.h"
+#include "libyuv.h"
+
+static void rgba2I420(uint8* dsty, int ystride,
+    uint8* dstu, int ustride,
+    uint8* dstv, int vstride,
+    const uint8* srcrgba, int rgbastride,
+    int width, int height){
+
+    unsigned char R,G,B;
+    for(int h = 0; h < height; h ++){
+        uint8* y = dsty + ystride * h;
+        uint8* prgb = (uint8*)srcrgba + rgbastride * 4 * h;
+        if(h%2){
+            uint8* u = dstu + ustride * h / 2;
+            uint8* v = dstv + vstride * h / 2;
+            for(int w=0; w < width; w += 2){
+                B = *prgb++;
+                G = *prgb++;
+                R = *prgb++;
+                prgb ++;
+                *y++ = ( (  66 * R + 129 * G +  25 * B + 128) >> 8) +  16 ;
+/*                if(ADVANCEDFILTER_CAM_FMT_YUV_420_NV21==cameraFmt){
+                    *u++ = ( ( -38 * R -  74 * G + 112 * B + 128) >> 8) + 128;
+                    *v++ = ( ( 112 * R -  94 * G -  18 * B + 128) >> 8) + 128;
+                }else{*/
+                    *u++ = ( ( 112 * R -  94 * G -  18 * B + 128) >> 8) + 128;
+                    *v++ = ( ( -38 * R -  74 * G + 112 * B + 128) >> 8) + 128;
+               // }
+
+
+                B = *prgb++;
+                G = *prgb++;
+                R = *prgb++;
+                prgb ++;
+                *y++ = ( (  66 * R + 129 * G +  25 * B + 128) >> 8) +  16 ;
+            }
+        }else {
+            for(int w=0; w < width; w++){
+                B = *prgb++;
+                G = *prgb++;
+                R = *prgb++;
+                prgb ++;
+                *y++ = ( (  66 * R + 129 * G +  25 * B + 128) >> 8) +  16 ;
+            }
+        }
+    }
+}
 
 static int decode_interrupt_cb(void *pMuxer) {
     return false;
@@ -92,7 +139,7 @@ bool LiveMuxer::start() {
     mVideoEncoder.setSrcVideoSize(mMuxerInfo.videoSrcWidth, mMuxerInfo.videoSrcHeight);
     mVideoEncoder.setDstVideoSize(mMuxerInfo.videoDstWidth, mMuxerInfo.videoDstHeight);
     mVideoEncoder.setBitrate(mMuxerInfo.voideoBitrate);
-	mVideoEncoder.setSrcPixelFormat(AV_PIX_FMT_NV21);
+	mVideoEncoder.setSrcPixelFormat(AV_PIX_FMT_YUV420P);
     if(!mVideoEncoder.initEncoder()){
         release();
         LOGE("%s vencoder init err", __FUNCTION__);
@@ -296,7 +343,7 @@ AVFrame* LiveMuxer::allocVideoFrame(){
     if(pFrame){
         pFrame->width = mMuxerInfo.videoSrcWidth;
         pFrame->height = mMuxerInfo.videoSrcHeight;
-        pFrame->format = AV_PIX_FMT_NV21;
+        pFrame->format = mVideoEncoder.getSrcPixelFormat();//mVideoEncoder.getSrcPixelFormat();
         av_frame_get_buffer(pFrame, 16);
     }
     return pFrame;
@@ -336,6 +383,49 @@ void LiveMuxer::queueVideoFrame(const char* y, const char* vu,
             mVideoFramesCount++;
 
             mVideoFramesCondition.signal();
+        }
+    }catch (...){
+    }
+
+    mVideoFramesMutex.unlock();
+}
+
+void LiveMuxer::queueVideoFrame(const char* rgba,
+                         const int width, const int height){
+    mVideoFramesMutex.lock();
+    AVFrame *frame = mVideoFrames[mVideoWritePos];
+    try {
+        if (frame) {
+            mVideoArrivedTime = currentUsec();
+            if(mVideoBeginTime == -1){
+                mVideoBeginTime = mVideoArrivedTime;
+            }
+            int64_t videoDifferTime = mVideoArrivedTime - mVideoBeginTime;
+
+            const uint8_t *src_frame = (const uint8_t *) rgba;
+            uint8_t *dst_y = frame->data[0];
+            uint8_t *dst_u = frame->data[1];
+            uint8_t *dst_v = frame->data[2];
+            /*libyuv::RGBAToI420(src_frame, width,
+                           dst_y, frame->linesize[0],
+                           dst_u, frame->linesize[1],
+                           dst_v, frame->linesize[2],
+                           width, height);*/
+            rgba2I420(dst_y, frame->linesize[0],
+                               dst_u, frame->linesize[1],
+                               dst_v, frame->linesize[2],
+                               src_frame, width,
+                               width, height);
+
+            frame->pts = videoDifferTime / 1000;
+
+            mVideoWritePos = (++mVideoWritePos) % mVideoFrames.size();
+            mVideoFramesCount++;
+
+            mVideoFramesCondition.signal();
+ /*           LOGE("%s fbosize: %d x %d,,ystrid: %d,,ustrid: %d,,vstrid: %d,,frameSize:%d x %d",
+                     __FUNCTION__,width, height, frame->linesize[0], frame->linesize[1],frame->linesize[2],
+                     frame->width, frame->height);*/
         }
     }catch (...){
     }
