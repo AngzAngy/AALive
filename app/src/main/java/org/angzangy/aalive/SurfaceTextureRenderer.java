@@ -18,15 +18,13 @@ public class SurfaceTextureRenderer extends Texture2DRenderer{
         super();
     }
 
-    public void drawTexture2D(int texture2DId, float[] mvpMatrix){
+    public void renderTexture2D(int texture2DId, float[] mvpMatrix){
         GLES20.glUseProgram(mProgram);
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GL_TEXTURE_EXTERNAL_OES, texture2DId);
 
-        GLES20.glUniformMatrix4fv(muMVPMatrixHandle, 1, false, mvpMatrix, 0);
-        GLES20.glUniformMatrix4fv(muSTMatrixHandle, 1, false, mSTMatrix, 0);
-        GLES20.glUniform1i(mSamplerHandle, 0);
+        setRendererParamaters(mvpMatrix, mSTMatrix);
 
         mVertices.position(VERTICES_DATA_POS_OFFSET);
         GLES20.glVertexAttribPointer(maPositionHandle, 3, GLES20.GL_FLOAT, false,
@@ -42,5 +40,11 @@ public class SurfaceTextureRenderer extends Texture2DRenderer{
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GL_TEXTURE_EXTERNAL_OES, 0);
+    }
+
+    protected void setRendererParamaters(float[]mvpMatrix, float[]stMatrix){
+        GLES20.glUniformMatrix4fv(muMVPMatrixHandle, 1, false, mvpMatrix, 0);
+        GLES20.glUniformMatrix4fv(muSTMatrixHandle, 1, false, stMatrix, 0);
+        GLES20.glUniform1i(mSamplerHandle, 0);
     }
 }

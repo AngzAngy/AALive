@@ -19,8 +19,6 @@ public class Texture2DRenderer {
             1.0f, 1.0f, 0, 1.f, 1.f,
     };
 
-
-
     public static final String VertexShader =
             "uniform mat4 uMVPMatrix;\n" +
             "uniform mat4 uSTMatrix;\n" +
@@ -96,10 +94,12 @@ public class Texture2DRenderer {
         }
     }
 
-    public void drawTexture2D(int texture2DId, float[]mvpMatrix){
+    public void renderTexture2D(int texture2DId, float[]mvpMatrix){
         GLES20.glUseProgram(mProgram);
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture2DId);
+
+        setRendererParamaters(mvpMatrix, mSTMatrix);
 
         mVertices.position(VERTICES_DATA_POS_OFFSET);
         GLES20.glVertexAttribPointer(maPositionHandle, 3, GLES20.GL_FLOAT, false,
@@ -110,11 +110,6 @@ public class Texture2DRenderer {
         GLES20.glVertexAttribPointer(maTextureHandle, 3, GLES20.GL_FLOAT, false,
                 VERTICES_DATA_STRIDE_BYTES, mVertices);
         GLES20.glEnableVertexAttribArray(maTextureHandle);
-
-        GLES20.glUniform1i(mSamplerHandle, 0);
-
-        GLES20.glUniformMatrix4fv(muMVPMatrixHandle, 1, false, mvpMatrix, 0);
-        GLES20.glUniformMatrix4fv(muSTMatrixHandle, 1, false, mSTMatrix, 0);
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
@@ -127,5 +122,11 @@ public class Texture2DRenderer {
             GLES20.glDeleteProgram(mProgram);
             mProgram = 0;
         }
+    }
+
+    protected void setRendererParamaters(float[]mvpMatrix, float[]stMatrix){
+        GLES20.glUniform1i(mSamplerHandle, 0);
+        GLES20.glUniformMatrix4fv(muMVPMatrixHandle, 1, false, mvpMatrix, 0);
+        GLES20.glUniformMatrix4fv(muSTMatrixHandle, 1, false, stMatrix, 0);
     }
 }

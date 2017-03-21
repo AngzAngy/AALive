@@ -43,13 +43,12 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
         if(mSurfaceRenderer != null){
             GLES20.glViewport(0, 0, mTextureFbo.getWidth(), mTextureFbo.getHeight());
             mTextureFbo.bindFbo(GLES20.GL_TEXTURE1);
-            mSurfaceRenderer.drawTexture2D(mSurfaceTextId, mMVPMatrix);
+            mSurfaceRenderer.renderTexture2D(mSurfaceTextId, mMVPMatrix);
             mLiveTelecastNative.readFbo(mTextureFbo.getWidth(), mTextureFbo.getHeight());
             mTextureFbo.unBindFbo(GLES20.GL_TEXTURE1);
         }
         GLES20.glViewport(0, 0, mWindowWidth, mWindowHeight);
-//        mSurfaceRenderer.drawTexture2D(mSurfaceTextId, mMVPMatrix);
-        mTexture2DRender.drawTexture2D(mTextureFbo.getTextureId(), mIdentiryMatrix);
+        mTexture2DRender.renderTexture2D(mTextureFbo.getTextureId(), mIdentiryMatrix);
     }
 
     /*
@@ -67,7 +66,7 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
         }else{
             mTextureFbo = new TextureFbo();
         }
-        mTextureFbo.createFbo(640 / 2, 480 / 2, GLES20.GL_TEXTURE_2D);
+        mTextureFbo.createFbo(640, 480, GLES20.GL_TEXTURE_2D);
 
         if(mLiveTelecastNative != null){
             mLiveTelecastNative.release();
@@ -109,10 +108,10 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
         Matrix.scaleM(mMVPMatrix, 0, 1, -1, 1);
         Matrix.setIdentityM(mIdentiryMatrix, 0);
         if(mSurfaceRenderer == null){
-            mSurfaceRenderer = new SurfaceTextureRenderer();
+            mSurfaceRenderer = new MosaicSurfaceTextureRenderer();
         }
         mSurfaceRenderer.loadShader(SurfaceTextureRenderer.VertexShader,
-                SurfaceTextureRenderer.OES_FragmentShader);
+                MosaicSurfaceTextureRenderer.OES_MosaicFragmentShader);
 
         mTexture2DRender = new Texture2DRenderer();
         mTexture2DRender.loadShader(Texture2DRenderer.VertexShader,
@@ -145,6 +144,9 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
             }
         }
         mSurfaceTexture = null;
+        if(mLiveTelecastNative != null){
+            mLiveTelecastNative.release();
+        }
     }
 
     @Override
