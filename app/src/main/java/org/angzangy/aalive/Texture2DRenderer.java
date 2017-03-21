@@ -9,7 +9,6 @@ public class Texture2DRenderer {
     protected static final int VERTICES_DATA_STRIDE_BYTES = 5 * FLOAT_SIZE_BYTES;
     protected static final int VERTICES_DATA_POS_OFFSET = 0;
     protected static final int VERTICES_DATA_UV_OFFSET = 3;
-    protected float[] mSTMatrix = new float[16];
 
     protected static final float[] mVerticesData = {
             // X, Y, Z, U, V
@@ -50,8 +49,6 @@ public class Texture2DRenderer {
         mVertices = NioBufferUtil.allocByteBuffer(mVerticesData.length
                 * FLOAT_SIZE_BYTES).asFloatBuffer();
         mVertices.put(mVerticesData).position(0);
-
-        Matrix.setIdentityM(mSTMatrix, 0);
     }
 
     public void onSurfaceCreated(){
@@ -94,12 +91,12 @@ public class Texture2DRenderer {
         }
     }
 
-    public void renderTexture2D(int texture2DId, float[]mvpMatrix){
+    public void renderTexture2D(int texture2DId, float[]mvpMatrix, float[]stMatrix){
         GLES20.glUseProgram(mProgram);
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture2DId);
 
-        setRendererParamaters(mvpMatrix, mSTMatrix);
+        setRendererParamaters(mvpMatrix, stMatrix);
 
         mVertices.position(VERTICES_DATA_POS_OFFSET);
         GLES20.glVertexAttribPointer(maPositionHandle, 3, GLES20.GL_FLOAT, false,

@@ -18,7 +18,8 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
     private SurfaceTexture.OnFrameAvailableListener mOnFrameAvailableListener;
     private SurfaceTextureRenderer mSurfaceRenderer;
     protected float[] mFboMVPMatrix = new float[16];
-    private float [] mScreenMVPMatrix = new float[16];
+    private float [] mScreenMVPMatrix = new float[16];//render to screen model-view-project matrix
+    private float[] mSTMatrix = new float[16];//texture transport matrix
     private TextureFbo mTextureFbo;
     private int mWindowWidth;
     private int mWindowHeight;
@@ -43,12 +44,12 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
         if(mSurfaceRenderer != null){
             GLES20.glViewport(0, 0, mTextureFbo.getWidth(), mTextureFbo.getHeight());
             mTextureFbo.bindFbo(GLES20.GL_TEXTURE1);
-            mSurfaceRenderer.renderTexture2D(mSurfaceTextId, mFboMVPMatrix);
+            mSurfaceRenderer.renderTexture2D(mSurfaceTextId, mFboMVPMatrix, mSTMatrix);
             mLiveTelecastNative.readFbo(mTextureFbo.getWidth(), mTextureFbo.getHeight());
             mTextureFbo.unBindFbo(GLES20.GL_TEXTURE1);
         }
         GLES20.glViewport(0, 0, mWindowWidth, mWindowHeight);
-        mTexture2DRender.renderTexture2D(mTextureFbo.getTextureId(), mScreenMVPMatrix);
+        mTexture2DRender.renderTexture2D(mTextureFbo.getTextureId(), mScreenMVPMatrix, mSTMatrix);
     }
 
     /*
@@ -108,6 +109,7 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
         Matrix.scaleM(mFboMVPMatrix, 0, 1, -1, 1);
         Matrix.setIdentityM(mScreenMVPMatrix, 0);
         Matrix.rotateM(mScreenMVPMatrix, 0, 180, 0, 0, 1);
+        Matrix.setIdentityM(mSTMatrix, 0);
         if(mSurfaceRenderer == null){
             mSurfaceRenderer = new MosaicSurfaceTextureRenderer();
         }

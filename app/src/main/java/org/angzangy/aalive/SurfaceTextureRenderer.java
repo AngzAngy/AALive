@@ -18,13 +18,14 @@ public class SurfaceTextureRenderer extends Texture2DRenderer{
         super();
     }
 
-    public void renderTexture2D(int texture2DId, float[] mvpMatrix){
+    @Override
+    public void renderTexture2D(int texture2DId, float[] mvpMatrix, float[] stMatrix){
         GLES20.glUseProgram(mProgram);
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GL_TEXTURE_EXTERNAL_OES, texture2DId);
 
-        setRendererParamaters(mvpMatrix, mSTMatrix);
+        setRendererParamaters(mvpMatrix, stMatrix);
 
         mVertices.position(VERTICES_DATA_POS_OFFSET);
         GLES20.glVertexAttribPointer(maPositionHandle, 3, GLES20.GL_FLOAT, false,
