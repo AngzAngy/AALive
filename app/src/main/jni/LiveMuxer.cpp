@@ -103,8 +103,7 @@ LiveMuxer::LiveMuxer():mFormatContext(NULL),
                        mVideoWritePos(0),
                        mVideoReadPos(0),
                        mVideoFramesCount(0),
-                       mVideoArrivedTime(-1),
-                       mVideoBeginTime(-1){
+                       mVideoEncodedCount(0){
   LOGE("%s LiveMuxer Constructor", __FUNCTION__);
 }
 
@@ -171,8 +170,8 @@ bool LiveMuxer::start() {
         LOGE("%s new astream err", __FUNCTION__);
         return false;
     }
-    mAudioStream->time_base.den = mMuxerInfo.audioSampleRate;
     mAudioStream->time_base.num = 1;
+    mAudioStream->time_base.den = mMuxerInfo.audioSampleRate;
     mAudioStream->codec->codec_tag = 0;
     if (mFormatContext->oformat->flags & AVFMT_GLOBALHEADER) {
         mAudioStream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
@@ -189,8 +188,8 @@ bool LiveMuxer::start() {
         LOGE("%s new vstream err", __FUNCTION__);
         return false;
     }
-    mVideoStream->time_base.den = 1000;
     mVideoStream->time_base.num = 1;
+    mVideoStream->time_base.den = 25;
     mVideoStream->codec->codec_tag = 0;
     if (mFormatContext->oformat->flags & AVFMT_GLOBALHEADER) {
         mVideoStream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
@@ -269,7 +268,7 @@ void LiveMuxer::release() {
         }
     }
     mVideoFrames.clear();
-    mVideoBeginTime = -1;
+    mVideoEncodedCount = 0;
 }
 
 bool LiveMuxer::writeMuxerFrame(AVPacket *pPacket, bool bIsAudio){
@@ -355,11 +354,6 @@ void LiveMuxer::queueVideoFrame(const char* y, const char* vu,
     AVFrame *frame = mVideoFrames[mVideoWritePos];
     try {
         if (frame) {
-            mVideoArrivedTime = currentUsec();
-            if(mVideoBeginTime == -1){
-                mVideoBeginTime = mVideoArrivedTime;
-            }
-            int64_t videoDifferTime = mVideoArrivedTime - mVideoBeginTime;
 
             uint8_t *srcY = (uint8_t *) y;
             uint8_t *srcUV = (uint8_t *) vu;
@@ -376,8 +370,6 @@ void LiveMuxer::queueVideoFrame(const char* y, const char* vu,
                     dstUV += frame->linesize[1];
                 }
             }
-
-            frame->pts = videoDifferTime / 1000;
 
             mVideoWritePos = (++mVideoWritePos) % mVideoFrames.size();
             mVideoFramesCount++;
@@ -396,11 +388,6 @@ void LiveMuxer::queueVideoFrame(const char* rgba,
     AVFrame *frame = mVideoFrames[mVideoWritePos];
     try {
         if (frame) {
-            mVideoArrivedTime = currentUsec();
-            if(mVideoBeginTime == -1){
-                mVideoBeginTime = mVideoArrivedTime;
-            }
-            int64_t videoDifferTime = mVideoArrivedTime - mVideoBeginTime;
 
             const uint8_t *src_frame = (const uint8_t *) rgba;
             uint8_t *dst_y = frame->data[0];
@@ -411,8 +398,6 @@ void LiveMuxer::queueVideoFrame(const char* rgba,
                            dst_u, frame->linesize[1],
                            dst_v, frame->linesize[2],
                            width, height);
-
-            frame->pts = videoDifferTime / 1000;
 
             mVideoWritePos = (++mVideoWritePos) % mVideoFrames.size();
             mVideoFramesCount++;
@@ -438,10 +423,14 @@ bool LiveMuxer::encodeVideoFrame(AVPacket *avpkt){
 
     try {
         AVFrame *frame = mVideoFrames[mVideoReadPos];
+        frame->pts = mVideoEncodedCount;
         mVideoReadPos = (++mVideoReadPos) % mVideoFrames.size();
         mVideoFramesCount--;
 
         ret = mVideoEncoder.encode(avpkt, frame);
+        if(ret){
+            mVideoEncodedCount++;
+        }
     }catch(...){
 
     }

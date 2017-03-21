@@ -73,8 +73,7 @@ private:
     int mVideoWritePos;
     int mVideoReadPos;
     int mVideoFramesCount;
-    int64_t mVideoArrivedTime;
-    int64_t	mVideoBeginTime;
+    int64_t mVideoEncodedCount;
     AA::Mutex mVideoFramesMutex;
     AA::Condition mVideoFramesCondition;
 };
