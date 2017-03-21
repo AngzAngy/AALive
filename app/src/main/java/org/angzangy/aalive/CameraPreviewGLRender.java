@@ -17,8 +17,8 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
     private SurfaceTextureStateChangedListener mSurfaceTextureStateChangedListener;
     private SurfaceTexture.OnFrameAvailableListener mOnFrameAvailableListener;
     private SurfaceTextureRenderer mSurfaceRenderer;
-    protected float[] mMVPMatrix = new float[16];
-    private float [] mIdentiryMatrix = new float[16];
+    protected float[] mFboMVPMatrix = new float[16];
+    private float [] mScreenMVPMatrix = new float[16];
     private TextureFbo mTextureFbo;
     private int mWindowWidth;
     private int mWindowHeight;
@@ -43,12 +43,12 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
         if(mSurfaceRenderer != null){
             GLES20.glViewport(0, 0, mTextureFbo.getWidth(), mTextureFbo.getHeight());
             mTextureFbo.bindFbo(GLES20.GL_TEXTURE1);
-            mSurfaceRenderer.renderTexture2D(mSurfaceTextId, mMVPMatrix);
+            mSurfaceRenderer.renderTexture2D(mSurfaceTextId, mFboMVPMatrix);
             mLiveTelecastNative.readFbo(mTextureFbo.getWidth(), mTextureFbo.getHeight());
             mTextureFbo.unBindFbo(GLES20.GL_TEXTURE1);
         }
         GLES20.glViewport(0, 0, mWindowWidth, mWindowHeight);
-        mTexture2DRender.renderTexture2D(mTextureFbo.getTextureId(), mIdentiryMatrix);
+        mTexture2DRender.renderTexture2D(mTextureFbo.getTextureId(), mScreenMVPMatrix);
     }
 
     /*
@@ -103,10 +103,11 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
         GLES20.glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T,
                 GLES20.GL_CLAMP_TO_EDGE);
 
-        Matrix.setIdentityM(mMVPMatrix, 0);
-        Matrix.rotateM(mMVPMatrix, 0, 90, 0, 0, 1);
-        Matrix.scaleM(mMVPMatrix, 0, 1, -1, 1);
-        Matrix.setIdentityM(mIdentiryMatrix, 0);
+        Matrix.setIdentityM(mFboMVPMatrix, 0);
+        Matrix.rotateM(mFboMVPMatrix, 0, 270, 0, 0, 1);
+        Matrix.scaleM(mFboMVPMatrix, 0, 1, -1, 1);
+        Matrix.setIdentityM(mScreenMVPMatrix, 0);
+        Matrix.rotateM(mScreenMVPMatrix, 0, 180, 0, 0, 1);
         if(mSurfaceRenderer == null){
             mSurfaceRenderer = new MosaicSurfaceTextureRenderer();
         }
