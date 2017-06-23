@@ -7,5 +7,5 @@ I recommend Nginx + RTMP mudole as RTMP server.
 More info
 
 Master source code repo: https://github.com/AngzAngy/AALive
-Mailing list: angzangy@gmail.com  angzangy@hotmail.com angzangy@163.com
+Mailing list: 381715271@qq.com angzangy@gmail.com  angzangy@hotmail.com angzangy@163.com
 QQ Group: 624577781
