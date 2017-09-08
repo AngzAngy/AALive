@@ -1,6 +1,6 @@
 AALive is a free, open software live telecast project that provides mobile applications based on FFmpeg multimedia framework.
 The project get preview frame from harware camera(compatible with Android camera1 and camera2).
-The project renderes camera preview using OpenGLES2.0 and does filters using GLSL(OpenGL Shading Language).
+The project renderes camera preview using OpenGLES2.0 , does filters using GLSL(OpenGL Shading Language) and records audio using OpenSLES.
 The project uses FFmpeg(x264 video encoder, libfaac audio encoder)to encode and uses RTMP protocol to push media stream.
 I recommend Nginx + RTMP mudole as RTMP server.
 
