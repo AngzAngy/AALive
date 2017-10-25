@@ -1,0 +1,23 @@
+//
+// Created by AngzAngy on 2017/10/24.
+//
+
+#ifndef AALIVE_YUVCONVERTER_H
+#define AALIVE_YUVCONVERTER_H
+#include "Framebuffer.h"
+#include "Texture2d.h"
+class YuvConverter{
+public:
+    YuvConverter();
+    ~YuvConverter();
+    bool convert(void *buf, int width, int height, int srcTextureId);
+private:
+    void release();
+    GLuint mProgram;
+    Framebuffer* mFramebuffer;
+    GLint vertexAttribLoc;
+    GLint textureAttribLoc;
+    GLint textureUniformLoc;
+    GLint coeffsUniformLoc;
+};
+#endif //AALIVE_YUVCONVERTER_H
