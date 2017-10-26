@@ -1,10 +1,17 @@
 #include "Framebuffer.h"
 
 Framebuffer::Framebuffer():mFramebufferId(0){
-};
+}
 
 void Framebuffer::create(){
-    glGenFramebuffers(1, &mFramebufferId);
+    release();
+}
+
+void Framebuffer::release(){
+    if(0 != mFramebufferId){
+        glDeleteFramebuffers(1, &mFramebufferId);
+        mFramebufferId = 0;
+    }
 }
 
 void Framebuffer::bindTexture(GLenum textureTarget, GLuint textureId){

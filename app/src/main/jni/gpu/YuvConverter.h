@@ -6,6 +6,7 @@
 #define AALIVE_YUVCONVERTER_H
 #include "Framebuffer.h"
 #include "Texture2d.h"
+#include "Shader.h"
 class YuvConverter{
 public:
     YuvConverter();
@@ -13,7 +14,7 @@ public:
     bool convert(void *buf, int width, int height, int srcTextureId);
 private:
     void release();
-    GLuint mProgram;
+    Shader* mShader;
     Framebuffer* mFramebuffer;
     GLint vertexAttribLoc;
     GLint textureAttribLoc;

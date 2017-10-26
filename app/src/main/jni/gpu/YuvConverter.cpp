@@ -4,6 +4,8 @@
 // an active EGL context, and only be used from that thread.
 #include "YuvConverter.h"
 #include "ProgramShaderUtil.h"
+#include "Logger.h"
+#include "GLUtil.h"
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 #include <GLES2/gl2platform.h>
@@ -57,18 +59,32 @@
         "}\n";
   // clang-format on
 
-YuvConverter::YuvConverter():mProgram(-1),mFramebuffer(NULL){
-    mProgram = ProgramShaderUtil::createProgram(VERTEX_SHADER, FRAGMENT_SHADER);
+YuvConverter::YuvConverter():mShader(NULL),mFramebuffer(NULL){
+    mShader = new Shader;
+    if(!mShader){
+        LOGE("out of memory func: %s, line: %d",__FUNCTION__, __LINE__);
+        return;
+    }
     mFramebuffer = new Framebuffer;
     if(mFramebuffer){
         mFramebuffer->create();
-        glUseProgram(mProgram);
-        vertexAttribLoc = glGetAttribLocation (mProgram, "in_pos");
-        textureAttribLoc = glGetAttribLocation (mProgram, "in_tc");
-        textureUniformLoc = glGetUniformLocation (mProgram, "oesTex");
-        coeffsUniformLoc = glGetUniformLocation (mProgram, "coeffs");
+        GLUtil::checkGLError("YuvConverter() create framebuffer");
+        mShader->create(VERTEX_SHADER, FRAGMENT_SHADER);
+        mShader->useProgram();
+        vertexAttribLoc = mShader->getAttribLocation ("in_pos");
+        GLUtil::checkGLError("YuvConverter() GetAttribLocation in_pos");
+
+        textureAttribLoc = mShader->getAttribLocation ("in_tc");
+        GLUtil::checkGLError("YuvConverter() GetAttribLocation in_tc");
+
+        textureUniformLoc = mShader->getUniformLocation ("oesTex");
+        GLUtil::checkGLError("YuvConverter() GetUniformLocation oesTex");
+
+        coeffsUniformLoc = mShader->getUniformLocation ("coeffs");
+        GLUtil::checkGLError("YuvConverter() GetUniformLocation coeffs");
     }else{
         release();
+        LOGE("out of memory func: %s, line: %d",__FUNCTION__, __LINE__);
     }
 }
 
@@ -81,14 +97,14 @@ void YuvConverter::release(){
             delete mFramebuffer;
             mFramebuffer = NULL;
          }
-         if(mProgram != -1){
-             glDeleteProgram(mProgram);
-             mProgram = -1;
+         if(mShader){
+             delete mShader;
+             mShader = NULL;
          }
 }
 
 bool YuvConverter::convert(void *buf, int width, int height, int srcTextureId){
-    if(mProgram == -1 || !mFramebuffer){
+    if(!mShader || !mFramebuffer){
         return false;
     }
         // We draw into a buffer laid out like

@@ -66,9 +66,11 @@ LOCAL_CPPFLAGS :=  -std=gnu++11 -fexceptions -frtti
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/ffmpeg/include $(LOCAL_PATH)/libyuv/include $(LOCAL_PATH)/gpu
 
 
-LOCAL_SRC_FILES := gpu/Framebuffer.cpp \
+LOCAL_SRC_FILES := gpu/GLUtil.cpp \
+                   gpu/Framebuffer.cpp \
                    gpu/ProgramShaderUtil.cpp \
                    gpu/Texture2d.cpp \
+                   gpu/Shader.cpp \
                    gpu/YuvConverter.cpp \
                    CommonGlobaldef.cpp \
                    Thread.cpp \
