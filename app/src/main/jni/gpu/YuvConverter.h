@@ -16,6 +16,7 @@ private:
     void release();
     Shader* mShader;
     Framebuffer* mFramebuffer;
+    Texture2d* mTexture2d;
     GLint vertexAttribLoc;
     GLint textureAttribLoc;
     GLint textureUniformLoc;

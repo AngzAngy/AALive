@@ -57,9 +57,8 @@
         "  gl_FragColor.a = coeffs.a + dot(coeffs.rgb,\n"
         "      texture2D(oesTex, interp_tc).rgb);\n"
         "}\n";
-  // clang-format on
 
-YuvConverter::YuvConverter():mShader(NULL),mFramebuffer(NULL){
+YuvConverter::YuvConverter():mShader(NULL),mFramebuffer(NULL),mTexture2d(NULL){
     mShader = new Shader;
     if(!mShader){
         LOGE("out of memory func: %s, line: %d",__FUNCTION__, __LINE__);
@@ -67,6 +66,8 @@ YuvConverter::YuvConverter():mShader(NULL),mFramebuffer(NULL){
     }
     mFramebuffer = new Framebuffer;
     if(mFramebuffer){
+        GLUtil::checkGLError("YuvConverter() create framebuffer before");
+        LOGE("YuvConverter() create framebuffer before: %s, line: %d",__FUNCTION__, __LINE__);
         mFramebuffer->create();
         GLUtil::checkGLError("YuvConverter() create framebuffer");
         mShader->create(VERTEX_SHADER, FRAGMENT_SHADER);
@@ -100,6 +101,10 @@ void YuvConverter::release(){
          if(mShader){
              delete mShader;
              mShader = NULL;
+         }
+         if(mTexture2d){
+            delete mTexture2d;
+            mTexture2d = NULL;
          }
 }
 
@@ -141,18 +146,27 @@ bool YuvConverter::convert(void *buf, int width, int height, int srcTextureId){
     int total_height = height + uv_height;
     int frameBufferWidth = width / 4;
     int frameBufferHeight = total_height;
-    Texture2d tex2d;
-    tex2d.genTexture((GLsizei)frameBufferWidth, (GLsizei)frameBufferHeight, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+
+    if(!mTexture2d){
+        mTexture2d = new Texture2d;
+        if(!mTexture2d){
+            LOGE("out of memory func: %s, line: %d",__FUNCTION__, __LINE__);
+            return false;
+        }
+        mTexture2d->genTexture((GLsizei)frameBufferWidth, (GLsizei)frameBufferHeight, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        GLUtil::checkGLError("YuvConverter::convert create texture");
+    }
 
     glEnableVertexAttribArray(vertexAttribLoc);
     glVertexAttribPointer(vertexAttribLoc, 2, GL_FLOAT, false, 0, DEVICE_RECTANGLE);
     glEnableVertexAttribArray(textureAttribLoc);
     glVertexAttribPointer(textureAttribLoc, 2, GL_FLOAT, false, 0, TEXTURE_RECTANGLE);
 
-    mFramebuffer->bindTexture(GL_TEXTURE_2D, tex2d.getTextureId());
+    mFramebuffer->bindTexture(GL_TEXTURE_2D, GL_TEXTURE2, mTexture2d->getTextureId());
 
-    glActiveTexture(GL_TEXTURE0);
+    //glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, srcTextureId);
+    //glUniform1i(textureUniformLoc, GL_TEXTURE2 - GL_TEXTURE0);
 
     // Draw Y
     glViewport(0, 0, y_width, height);
@@ -175,9 +189,9 @@ bool YuvConverter::convert(void *buf, int width, int height, int srcTextureId){
     glReadPixels(0, 0, (GLsizei)frameBufferWidth, (GLsizei)frameBufferHeight, GL_RGBA, GL_UNSIGNED_BYTE, buf);
 
     // Restore normal framebuffer.
-    glActiveTexture(GL_TEXTURE0);
+    //glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, 0);
-    mFramebuffer->unbind(GL_TEXTURE_2D);
+    mFramebuffer->unbindTexture(GL_TEXTURE_2D, GL_TEXTURE2);
 
     glDisableVertexAttribArray(vertexAttribLoc);
     glDisableVertexAttribArray(textureAttribLoc);

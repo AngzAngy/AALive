@@ -11,8 +11,8 @@ public:
     ~Framebuffer();
     void create();
     void release();
-    void bindTexture(GLenum textureTarget,GLuint textureId);
-    void unbind(GLenum textureTarget);
+    void bindTexture(GLenum textureTarget,GLenum texture,GLuint textureId);
+    void unbindTexture(GLenum textureTarget,GLenum texture);
     GLuint getFramebufferId(){
         return mFramebufferId;
     }
