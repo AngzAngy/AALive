@@ -147,6 +147,8 @@ bool YuvConverter::convert(void *buf, int width, int height, int srcTextureId){
     int frameBufferWidth = width / 4;
     int frameBufferHeight = total_height;
 
+    mShader->useProgram();
+
     if(!mTexture2d){
         mTexture2d = new Texture2d;
         if(!mTexture2d){
@@ -164,9 +166,9 @@ bool YuvConverter::convert(void *buf, int width, int height, int srcTextureId){
 
     mFramebuffer->bindTexture(GL_TEXTURE_2D, GL_TEXTURE2, mTexture2d->getTextureId());
 
-    //glActiveTexture(GL_TEXTURE2);
+    glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_2D, srcTextureId);
-    //glUniform1i(textureUniformLoc, GL_TEXTURE2 - GL_TEXTURE0);
+    glUniform1i(textureUniformLoc, GL_TEXTURE3 - GL_TEXTURE0);
 
     // Draw Y
     glViewport(0, 0, y_width, height);
@@ -182,19 +184,19 @@ bool YuvConverter::convert(void *buf, int width, int height, int srcTextureId){
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     // Draw V
-    glViewport(width / 8, height, uv_width, uv_height);
+    glViewport(uv_width, height, uv_width, uv_height);
     glUniform4f(coeffsUniformLoc, 0.499f, -0.418f, -0.0813f, 0.5f);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-    glReadPixels(0, 0, (GLsizei)frameBufferWidth, (GLsizei)frameBufferHeight, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+    glReadPixels(0, 0, mTexture2d->getWidth(), mTexture2d->getHeight(), GL_RGBA, GL_UNSIGNED_BYTE, buf);
 
     // Restore normal framebuffer.
-    //glActiveTexture(GL_TEXTURE2);
+    glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_2D, 0);
     mFramebuffer->unbindTexture(GL_TEXTURE_2D, GL_TEXTURE2);
 
-    glDisableVertexAttribArray(vertexAttribLoc);
-    glDisableVertexAttribArray(textureAttribLoc);
+    //glDisableVertexAttribArray(vertexAttribLoc);
+    //glDisableVertexAttribArray(textureAttribLoc);
     return true;
 }
 
