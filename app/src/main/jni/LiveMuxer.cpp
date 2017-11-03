@@ -358,17 +358,27 @@ void LiveMuxer::queueVideoFrame(const char* y, const char* vu,
             uint8_t *srcY = (uint8_t *) y;
             uint8_t *srcUV = (uint8_t *) vu;
             uint8_t *dstY = frame->data[0];
-            uint8_t *dstUV = frame->data[1];
+            uint8_t *dstU = frame->data[1];
+            uint8_t *dstV = frame->data[2];
+            int uvh = frame->height / 2;
+            int uvw = frame->width / 2;
             for (int x = 0; x < frame->height; x++) {
                 memcpy(dstY, srcY, frame->width);
                 dstY += frame->linesize[0];
                 srcY += width;
 
-                if(x % 2 == 0){
+                /*if(x % 2 == 0){
                     memcpy(dstUV, srcUV, frame->width);
                     srcUV += width;
                     dstUV += frame->linesize[1];
-                }
+                }*/
+            }
+            for (int x = 0; x < uvh; x++) {
+                memcpy(dstU, srcUV, uvw);
+                memcpy(dstV, srcUV + uvw , uvw);
+                srcUV += width;
+                dstU += frame->linesize[1];
+                dstV += frame->linesize[2];
             }
 
             mVideoWritePos = (++mVideoWritePos) % mVideoFrames.size();

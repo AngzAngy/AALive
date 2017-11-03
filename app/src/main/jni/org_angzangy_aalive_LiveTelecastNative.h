@@ -77,6 +77,14 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_pushNV21Buffe
    */
   JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_readFbo
     (JNIEnv *, jobject, jint, jint);
+
+   /*
+    * Class:     org_angzangy_aalive_LiveTelecastNative
+    * Method:    pushTexture
+    * Signature: (III)V
+    */
+   JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_pushTexture
+     (JNIEnv *, jobject, jint, jint, jint);
 #ifdef __cplusplus
 }
 #endif

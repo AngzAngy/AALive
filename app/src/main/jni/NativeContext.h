@@ -4,6 +4,7 @@
 #include "LiveMuxer.h"
 #include "LiveMuxerInfo.h"
 #include "AudioRecord.h"
+#include "YuvConverter.h"
 
 #ifndef AALIVE_NATIVECONTEXT_H
 #define AALIVE_NATIVECONTEXT_H
@@ -13,6 +14,7 @@ public:
         videoRawBuf = NULL;
         videoRawBufBytes = 0;
         audioRecord = NULL;
+        I420Convert = NULL;
     }
     void allocVideoRawBuf(int bytes){
         videoRawBuf = new char[bytes];
@@ -32,5 +34,6 @@ public:
     char *videoRawBuf;
     int videoRawBufBytes;
     AudioRecord *audioRecord;
+    YuvConverter *I420Convert;
 };
 #endif //AALIVE_NATIVECONTEXT_H

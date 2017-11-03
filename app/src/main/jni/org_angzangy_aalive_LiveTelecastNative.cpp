@@ -203,3 +203,31 @@ JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_pushNV21Buffe
         ptr->liveMuxer.queueVideoFrame((const char*)pixels,jfboWidth, jfboHeight);
     }
 }
+
+   /*
+    * Class:     org_angzangy_aalive_LiveTelecastNative
+    * Method:    pushTexture
+    * Signature: (III)V
+    */
+   JNIEXPORT void JNICALL Java_org_angzangy_aalive_LiveTelecastNative_pushTexture
+     (JNIEnv *jniEnv, jobject jobj, jint jtex, jint jwidth, jint jheight){
+            NativeContext * ptr = getNativePtr(jniEnv, jobj);
+            if(ptr){
+                int ybufsize = jwidth * jheight;
+                int bufsize = jwidth * jheight * 3 / 2;
+                if(ptr->videoRawBuf == NULL || ptr->videoRawBufBytes != bufsize){
+                    ptr->releaseVideoRawBuf();
+                    ptr->allocVideoRawBuf(bufsize);
+                    if(ptr->I420Convert){
+                        delete (ptr->I420Convert);
+                        ptr->I420Convert = NULL;
+                    }
+                }
+                if(ptr->I420Convert == NULL){
+                   ptr->I420Convert = new YuvConverter;
+                }
+                char *pixels = ptr->videoRawBuf;
+                ptr->I420Convert->convert(pixels, jwidth, jheight, jtex);
+                ptr->liveMuxer.queueVideoFrame(pixels, (pixels + ybufsize), jwidth, jheight);
+            }
+    }

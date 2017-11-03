@@ -45,8 +45,9 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
             GLES20.glViewport(0, 0, mTextureFbo.getWidth(), mTextureFbo.getHeight());
             mTextureFbo.bindFbo(GLES20.GL_TEXTURE1);
             mSurfaceRenderer.renderTexture2D(mSurfaceTextId, mFboMVPMatrix, mSTMatrix);
-            mLiveTelecastNative.readFbo(mTextureFbo.getWidth(), mTextureFbo.getHeight());
             mTextureFbo.unBindFbo(GLES20.GL_TEXTURE1);
+//            mLiveTelecastNative.readFbo(mTextureFbo.getWidth(), mTextureFbo.getHeight());
+            mLiveTelecastNative.pushTexture(mTextureFbo.getTextureId(), mTextureFbo.getWidth(), mTextureFbo.getHeight());
         }
         GLES20.glViewport(0, 0, mWindowWidth, mWindowHeight);
         mTexture2DRender.renderTexture2D(mTextureFbo.getTextureId(), mScreenMVPMatrix, mSTMatrix);

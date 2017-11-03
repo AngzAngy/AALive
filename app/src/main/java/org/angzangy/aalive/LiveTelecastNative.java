@@ -7,7 +7,7 @@ import java.nio.ByteBuffer;
  */
 
 public class LiveTelecastNative {
-    private final static String RTMP_URL = "rtmp://172.17.72.20:1935/myapp/test2";
+    private final static String RTMP_URL = "rtmp://172.17.72.31:1935/myapp/test2";
     static {
         try {
             System.loadLibrary("aalive");
@@ -29,4 +29,5 @@ public class LiveTelecastNative {
     public native void pushNV21Buffer(byte[] buffer, int with, int height);
     public native void pushNV21Buffer(ByteBuffer ybuffer, ByteBuffer vubuffer,
                                       int with, int height);
+    public native void pushTexture(int texture, int width, int height);
 }
