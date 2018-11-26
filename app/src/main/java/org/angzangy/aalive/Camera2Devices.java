@@ -38,7 +38,6 @@ public class Camera2Devices implements ICameraDevices {
     private SurfaceTexture mSurfaceTexture;
     private CaptureRequest.Builder mPreviewRequestBuilder;
     private CaptureRequest mPreviewRequest;
-    private OnPreviewSizeChangedListener mOnPreviewSizeChangedListener;
 
     public Camera2Devices(CameraManager cameraManager) {
         mCameraMgr = cameraManager;
@@ -110,9 +109,6 @@ public class Camera2Devices implements ICameraDevices {
     }
     @Override
     public void openCamera(SurfaceTexture surfaceTexture, int cameraId) {
-        if(mOnPreviewSizeChangedListener != null){
-            mOnPreviewSizeChangedListener.onPreviewSizeChanged(640, 480);
-        }
         setUpCameraOutput(cameraId);
         try {
             mSurfaceTexture = surfaceTexture;
@@ -145,11 +141,6 @@ public class Camera2Devices implements ICameraDevices {
             mCameraDevice.close();
             mCameraDevice = null;
         }
-    }
-
-    @Override
-    public void setOnPreviewSizeChangedListener(OnPreviewSizeChangedListener l){
-        mOnPreviewSizeChangedListener = l;
     }
 
     private ImageReader.OnImageAvailableListener mOnImageAvailableListener = new ImageReader.OnImageAvailableListener() {

@@ -2,16 +2,12 @@ package org.angzangy.aalive;
 
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v4.app.Fragment;
 
-public class BaseActivity extends AppCompatActivity {
-    public void requestPermissionCompat(String permission, int requestCode){
-        requestPermissionsCompat(new String[]{permission}, requestCode);
-    }
+public class BaseFragment extends Fragment {
 
-    public void requestPermissionsCompat(String[] permissions, int requestCode){
-        ActivityCompat.requestPermissions(this, permissions, requestCode);
+    public void requestPermission(String permission, int requestCode){
+        requestPermissions(new String[]{permission}, requestCode);
     }
 
     protected void onRequestPermissionSuccess(int requestCode, String permission){

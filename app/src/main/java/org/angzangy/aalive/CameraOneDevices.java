@@ -27,7 +27,6 @@ public class CameraOneDevices implements ICameraDevices,
     private ArrayList<byte[]> mPreviewBuffers = new ArrayList<byte[]>();
     private int mBufferIndex;
 //    private LiveTelecastNative mLiveTelecastNative;
-    private OnPreviewSizeChangedListener mOnPreviewSizeChangedListener;
     public CameraOneDevices(){
         mHandlerThread = new HandlerThread("camera-one-thread");
         mHandlerThread.start();
@@ -72,10 +71,6 @@ public class CameraOneDevices implements ICameraDevices,
             parameters.setPreviewSize(mOptimalPreviewSize.width, mOptimalPreviewSize.height);
             mCamera.setParameters(parameters);
 
-            if(mOnPreviewSizeChangedListener != null){
-                mOnPreviewSizeChangedListener.onPreviewSizeChanged(mOptimalPreviewSize.width, mOptimalPreviewSize.height);
-            }
-
             Message msg = mCameraHandler.obtainMessage(CameraHandler.SET_PREVIEW_SIZE_WHAT);
             msg.arg1 = mOptimalPreviewSize.width;
             msg.arg2 = mOptimalPreviewSize.height;
@@ -115,11 +110,6 @@ public class CameraOneDevices implements ICameraDevices,
             mCamera.release();
             mCamera=null;
         }
-    }
-
-    @Override
-    public void setOnPreviewSizeChangedListener(OnPreviewSizeChangedListener l){
-        mOnPreviewSizeChangedListener = l;
     }
 
     private void setPreviewCallbackWithBuffer(Camera.PreviewCallback cb){
