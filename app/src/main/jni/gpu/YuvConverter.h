@@ -21,5 +21,6 @@ private:
     GLint textureAttribLoc;
     GLint textureUniformLoc;
     GLint coeffsUniformLoc;
+    GLint xOffstLoc;
 };
 #endif //AALIVE_YUVCONVERTER_H

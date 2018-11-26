@@ -39,6 +39,7 @@
   const static char* FRAGMENT_SHADER =
       "precision mediump float;\n"
       "varying vec2 interp_tc;\n"
+      "uniform vec2 xOffst;\n"
        "uniform sampler2D oesTex;\n"
        "uniform vec4 coeffs;\n"       // Color conversion coefficients, including constant term
        "void main() {\n"
@@ -49,13 +50,13 @@
       // try to do it as a vec3 x mat3x4, followed by an add in of a
       // constant vector.
         "  gl_FragColor.r = coeffs.a + dot(coeffs.rgb,\n"
-        "      texture2D(oesTex, interp_tc).rgb);\n"
+        "      texture2D(oesTex, interp_tc - 1.5 * xOffst).rgb);\n"
         "  gl_FragColor.g = coeffs.a + dot(coeffs.rgb,\n"
-        "      texture2D(oesTex, interp_tc).rgb);\n"
+        "      texture2D(oesTex, interp_tc - 0.5 * xOffst).rgb);\n"
         "  gl_FragColor.b = coeffs.a + dot(coeffs.rgb,\n"
-        "      texture2D(oesTex, interp_tc).rgb);\n"
+        "      texture2D(oesTex, interp_tc + 0.5 * xOffst).rgb);\n"
         "  gl_FragColor.a = coeffs.a + dot(coeffs.rgb,\n"
-        "      texture2D(oesTex, interp_tc).rgb);\n"
+        "      texture2D(oesTex, interp_tc + 1.5 * xOffst).rgb);\n"
         "}\n";
 
 YuvConverter::YuvConverter():mShader(NULL),mFramebuffer(NULL),mTexture2d(NULL){
@@ -83,6 +84,9 @@ YuvConverter::YuvConverter():mShader(NULL),mFramebuffer(NULL),mTexture2d(NULL){
 
         coeffsUniformLoc = mShader->getUniformLocation ("coeffs");
         GLUtil::checkGLError("YuvConverter() GetUniformLocation coeffs");
+
+        xOffstLoc = mShader->getUniformLocation ("xOffst");
+        GLUtil::checkGLError("YuvConverter() GetUniformLocation xOffst");
     }else{
         release();
         LOGE("out of memory func: %s, line: %d",__FUNCTION__, __LINE__);
@@ -176,9 +180,11 @@ bool YuvConverter::convert(void *buf, int width, int height, int srcTextureId){
     // https://en.wikipedia.org/wiki/YUV#Y.27UV444_to_RGB888_conversion.
     // We use the ITU-R coefficients for U and V */
     glUniform4f(coeffsUniformLoc, 0.299f, 0.587f, 0.114f, 0.0f);
+    glUniform2f(xOffstLoc, 1.0f / width, 0);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     // Draw U
+    glUniform2f(xOffstLoc, 2.0f * 1.0f / width, 0);
     glViewport(0, height, uv_width, uv_height);
     glUniform4f(coeffsUniformLoc, -0.169f, -0.331f, 0.499f, 0.5f);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
