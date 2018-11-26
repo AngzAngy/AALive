@@ -46,8 +46,10 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
             mTextureFbo.bindFbo(GLES20.GL_TEXTURE1);
             mSurfaceRenderer.renderTexture2D(mSurfaceTextId, mFboMVPMatrix, mSTMatrix);
             mTextureFbo.unBindFbo(GLES20.GL_TEXTURE1);
-//            mLiveTelecastNative.readFbo(mTextureFbo.getWidth(), mTextureFbo.getHeight());
-            mLiveTelecastNative.pushTexture(mTextureFbo.getTextureId(), mTextureFbo.getWidth(), mTextureFbo.getHeight());
+            if(mLiveTelecastNative != null) {
+    //            mLiveTelecastNative.readFbo(mTextureFbo.getWidth(), mTextureFbo.getHeight());
+                mLiveTelecastNative.pushTexture(mTextureFbo.getTextureId(), mTextureFbo.getWidth(), mTextureFbo.getHeight());
+            }
         }
         GLES20.glViewport(0, 0, mWindowWidth, mWindowHeight);
         mTexture2DRender.renderTexture2D(mTextureFbo.getTextureId(), mScreenMVPMatrix, mSTMatrix);
@@ -74,7 +76,9 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
             mLiveTelecastNative.release();
         }
         mLiveTelecastNative = new LiveTelecastNative();
-        mLiveTelecastNative.onPreviewSizeChanged(mTextureFbo.getWidth(), mTextureFbo.getHeight());
+        if(mLiveTelecastNative != null) {
+            mLiveTelecastNative.onPreviewSizeChanged(mTextureFbo.getWidth(), mTextureFbo.getHeight());
+        }
     }
 
     /*
@@ -140,16 +144,10 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
         return mSurfaceTexture;
     }
 
-    public void onPause(){
-        if(mSurfaceTexture!=null){
-            mSurfaceTexture.release();
-            if(mSurfaceTextureStateChangedListener !=null){
-                mSurfaceTextureStateChangedListener.onSurfaceTextureDestroyed();
-            }
-        }
-        mSurfaceTexture = null;
+    public void release(){
         if(mLiveTelecastNative != null){
             mLiveTelecastNative.release();
+            mLiveTelecastNative = null;
         }
     }
 

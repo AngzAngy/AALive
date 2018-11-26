@@ -40,15 +40,6 @@ implements SurfaceTexture.OnFrameAvailableListener{
         }
     }
 
-    public void onPause(){
-        super.onPause();
-        if(mRender!=null){
-            setSurfaceTextureStateChangedListener(null);
-            mRender.setOnFrameAvailableListener(null);
-            mRender.onPause();
-        }
-    }
-
     @Override
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
         requestRender();
@@ -57,6 +48,12 @@ implements SurfaceTexture.OnFrameAvailableListener{
     public void setSurfaceTextureStateChangedListener(SurfaceTextureStateChangedListener listener){
         if(mRender != null){
             mRender.setmSurfaceTextureStateChangedListener(listener);
+        }
+    }
+
+    public void release(){
+        if(mRender != null){
+            mRender.release();
         }
     }
 }
