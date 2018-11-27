@@ -63,6 +63,7 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
      */
     @Override
     public void onSurfaceChanged(GL10 glUnused, int width, int height) {
+        LogPrinter.d("GLSurfaceChanged ("+width+" x "+height+" )");
         mWindowWidth = width;
         mWindowHeight = height;
         if(mTextureFbo != null){
