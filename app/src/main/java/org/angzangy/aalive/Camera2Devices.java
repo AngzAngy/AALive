@@ -35,6 +35,7 @@ public class Camera2Devices implements ICameraDevices {
     private ImageReader mImageReader;
     private String mInternalCameraId;
     private CameraDevice mCameraDevice;
+    private CameraCaptureSession mCameraCaptureSession;
     private SurfaceTexture mSurfaceTexture;
     private CaptureRequest.Builder mPreviewRequestBuilder;
     private CaptureRequest mPreviewRequest;
@@ -91,6 +92,7 @@ public class Camera2Devices implements ICameraDevices {
                             public void onConfigured(CameraCaptureSession cameraCaptureSession) {
                                 mPreviewRequest = mPreviewRequestBuilder.build();
                                 try {
+                                    mCameraCaptureSession = cameraCaptureSession;
                                     cameraCaptureSession.setRepeatingRequest(mPreviewRequest, mCaptureCallback, mCameraHandler);
                                 } catch (CameraAccessException e) {
                                     e.printStackTrace();
@@ -137,9 +139,17 @@ public class Camera2Devices implements ICameraDevices {
 
     @Override
     public void releaseCamera() {
+        if(mCameraCaptureSession != null){
+            mCameraCaptureSession.close();
+            mCameraCaptureSession = null;
+        }
         if(mCameraDevice != null) {
             mCameraDevice.close();
             mCameraDevice = null;
+        }
+        if(mImageReader != null){
+            mImageReader.close();
+            mImageReader = null;
         }
     }
 
