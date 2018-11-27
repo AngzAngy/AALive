@@ -47,7 +47,7 @@ implements SurfaceTexture.OnFrameAvailableListener{
 
     public void setSurfaceTextureStateChangedListener(SurfaceTextureStateChangedListener listener){
         if(mRender != null){
-            mRender.setmSurfaceTextureStateChangedListener(listener);
+            mRender.setSurfaceTextureStateChangedListener(listener);
         }
     }
 

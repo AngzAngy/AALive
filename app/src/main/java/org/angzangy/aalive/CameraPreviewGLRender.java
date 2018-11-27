@@ -164,7 +164,7 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
     }
 
 
-    public void setmSurfaceTextureStateChangedListener(SurfaceTextureStateChangedListener  l) {
+    public void setSurfaceTextureStateChangedListener(SurfaceTextureStateChangedListener  l) {
         mSurfaceTextureStateChangedListener = l;
     }
 
