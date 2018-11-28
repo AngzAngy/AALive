@@ -144,6 +144,11 @@ public class CameraOneDevices implements ICameraDevices,
 //        msg.sendToTarget();
     }
 
+    @Override
+    public void setOnCameraPreviewSizeChangeListener(OnCameraPreviewSizeChangeListener listener) {
+
+    }
+
     class CameraHandler extends Handler {
         public static final int SET_PREVIEW_SIZE_WHAT = 0;
         public static final int ON_PREVIEW_FRAME_WHAT = 1;

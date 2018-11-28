@@ -14,4 +14,5 @@ public interface ICameraDevices {
     public void startCameraPreview();
     public void stopCameraPreview();
     public void releaseCamera();
+    public void setOnCameraPreviewSizeChangeListener(OnCameraPreviewSizeChangeListener listener);
 }

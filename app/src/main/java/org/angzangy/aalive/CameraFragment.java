@@ -11,7 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 public class CameraFragment extends BaseFragment
-implements SurfaceTextureStateChangedListener{
+implements SurfaceTextureStateChangedListener, OnCameraPreviewSizeChangeListener{
     private static final String TAG = "MainActivity";
     private CameraPreviewGLView mCameraGLView;
     private ICameraDevices mCamera;
@@ -76,6 +76,19 @@ implements SurfaceTextureStateChangedListener{
 
     }
 
+    @Override
+    public void OnCameraPreviewSize(final int width, final int height) {
+        if(mCameraGLView != null){
+            mCameraGLView.setSurfaceTextureSize(width, height);
+            mCameraGLView.post(new Runnable() {
+                @Override
+                public void run() {
+                    mCameraGLView.setAspectRadio(width, height);
+                }
+            });
+        }
+    }
+
     private void setCameraParameter(){
         if(mCamera != null) {
             mCamera.setCameraParameters();
@@ -103,6 +116,7 @@ implements SurfaceTextureStateChangedListener{
     private void openCamera(){
         if(mCameraGLView != null && mCameraGLView.getSurfaceTexture() != null) {
             mCamera = new Camera2Devices((CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE));//CameraOneDevices();
+            mCamera.setOnCameraPreviewSizeChangeListener(this);
             mCamera.openCamera(mCameraGLView.getSurfaceTexture(), ICameraDevices.CAMERA_FACING_FRONT);
         }
     }
@@ -110,6 +124,7 @@ implements SurfaceTextureStateChangedListener{
     private void releaseCamera(){
         if(mCamera!=null){
             mCamera.releaseCamera();
+            mCamera.setOnCameraPreviewSizeChangeListener(null);
             mCamera=null;
         }
     }

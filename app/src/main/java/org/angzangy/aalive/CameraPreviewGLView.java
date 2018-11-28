@@ -7,6 +7,8 @@ import android.graphics.SurfaceTexture;
 
 public class CameraPreviewGLView extends GLSurfaceView
 implements SurfaceTexture.OnFrameAvailableListener{
+    private int mRatioWidth;
+    private int mRatioHeight;
     private CameraPreviewGLRender mRender;
 
     public CameraPreviewGLView(Context context) {
@@ -17,6 +19,31 @@ implements SurfaceTexture.OnFrameAvailableListener{
     public CameraPreviewGLView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init(context);
+    }
+
+    public void setAspectRadio(int ratioWidth, int ratioHeight){
+        if (ratioWidth < 0 || ratioHeight < 0) {
+            throw new IllegalArgumentException("Size cannot be negative.");
+        }
+        mRatioWidth = ratioWidth;
+        mRatioHeight = ratioHeight;
+        requestLayout();
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec){
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        int width = MeasureSpec.getSize(widthMeasureSpec);
+        int height = MeasureSpec.getSize(heightMeasureSpec);
+        if(mRatioWidth <= 0 || mRatioHeight <= 0){
+            setMeasuredDimension(width, height);
+            return;
+        }
+        if(width < height * mRatioWidth / mRatioHeight){
+            setMeasuredDimension(width, width * mRatioHeight / mRatioWidth);
+        }else{
+            setMeasuredDimension(height * mRatioWidth / mRatioHeight, height);
+        }
     }
 
     /*
@@ -48,6 +75,12 @@ implements SurfaceTexture.OnFrameAvailableListener{
     public void setSurfaceTextureStateChangedListener(SurfaceTextureStateChangedListener listener){
         if(mRender != null){
             mRender.setSurfaceTextureStateChangedListener(listener);
+        }
+    }
+
+    public void setSurfaceTextureSize(int width, int height){
+        if(mRender != null){
+            mRender.setSurfaceTextureSize(width, height);
         }
     }
 

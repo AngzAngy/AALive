@@ -1,7 +1,5 @@
 package org.angzangy.aalive;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
@@ -17,11 +15,9 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.ImageReader;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.support.v4.app.ActivityCompat;
 import android.util.Size;
 import android.view.Surface;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
 
 /**
@@ -39,6 +35,8 @@ public class Camera2Devices implements ICameraDevices {
     private SurfaceTexture mSurfaceTexture;
     private CaptureRequest.Builder mPreviewRequestBuilder;
     private CaptureRequest mPreviewRequest;
+    private OnCameraPreviewSizeChangeListener mOnCameraPreviewSizeChangeListener;
+    private Size mPreviewSize = new Size(640, 480);
 
     public Camera2Devices(CameraManager cameraManager) {
         mCameraMgr = cameraManager;
@@ -47,14 +45,19 @@ public class Camera2Devices implements ICameraDevices {
         mCameraHandler = new Handler(mHandlerThread.getLooper());
     }
 
+    @Override
+    public void setOnCameraPreviewSizeChangeListener(OnCameraPreviewSizeChangeListener listener) {
+        mOnCameraPreviewSizeChangeListener = listener;
+    }
+
     private void setUpCameraOutput(int cameraId) {
         int cameraFacing = 0;
-        switch (cameraFacing) {
+        switch (cameraId) {
             case CAMERA_FACING_BACK:
-                cameraFacing = CameraCharacteristics.LENS_FACING_FRONT;
+                cameraFacing = CameraCharacteristics.LENS_FACING_BACK;
                 break;
             case CAMERA_FACING_FRONT:
-                cameraFacing = CameraCharacteristics.LENS_FACING_BACK;
+                cameraFacing = CameraCharacteristics.LENS_FACING_FRONT;
                 break;
         }
         try {
@@ -112,6 +115,9 @@ public class Camera2Devices implements ICameraDevices {
     @Override
     public void openCamera(SurfaceTexture surfaceTexture, int cameraId) {
         setUpCameraOutput(cameraId);
+        if(mOnCameraPreviewSizeChangeListener != null){
+            mOnCameraPreviewSizeChangeListener.OnCameraPreviewSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+        }
         try {
             mSurfaceTexture = surfaceTexture;
             mCameraMgr.openCamera(mInternalCameraId, mStateCallback, mCameraHandler);

@@ -12,6 +12,8 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
     SurfaceTexture.OnFrameAvailableListener{
     private static final int GL_TEXTURE_EXTERNAL_OES = 0x8D65;
     private SurfaceTexture mSurfaceTexture;
+    private int mSurfaceTextureWidth;
+    private int mSurfaceTextureHeight;
     private int mSurfaceTextId;
     private boolean mUpdateSurface = false;
     private SurfaceTextureStateChangedListener mSurfaceTextureStateChangedListener;
@@ -71,12 +73,19 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
         }else{
             mTextureFbo = new TextureFbo();
         }
-        mTextureFbo.createFbo(640, 480, GLES20.GL_TEXTURE_2D);
+        int fboWidth = width;
+        int fboHeight = height;
+        if(mSurfaceTextureWidth > 0 && mSurfaceTextureHeight > 0) {
+            fboWidth = mSurfaceTextureWidth;
+            fboHeight = mSurfaceTextureHeight;
+        }
+        LogPrinter.d("SurfaceTextureSize ("+mSurfaceTextureWidth+" x "+mSurfaceTextureHeight+" )");
+        mTextureFbo.createFbo(fboWidth, fboHeight, GLES20.GL_TEXTURE_2D);
 
         if(mLiveTelecastNative != null){
             mLiveTelecastNative.release();
         }
-        mLiveTelecastNative = new LiveTelecastNative();
+//        mLiveTelecastNative = new LiveTelecastNative();
         if(mLiveTelecastNative != null) {
             mLiveTelecastNative.onPreviewSizeChanged(mTextureFbo.getWidth(), mTextureFbo.getHeight());
         }
@@ -171,5 +180,13 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
 
     public void setOnFrameAvailableListener(SurfaceTexture.OnFrameAvailableListener listener){
         mOnFrameAvailableListener = listener;
+    }
+
+    public void setSurfaceTextureSize(int width, int height){
+        if (width < 0 || width < 0) {
+            throw new IllegalArgumentException("Size cannot be negative.");
+        }
+        mSurfaceTextureWidth = width;
+        mSurfaceTextureHeight = height;
     }
 }
