@@ -31,7 +31,6 @@ import cn.kuwo.kwmusiccar.App;
 import cn.kuwo.kwmusiccar.ad.AdJsonParse;
 import cn.kuwo.kwmusiccar.ad.entity.AdEntity;
 import cn.kuwo.kwmusiccar.ad.entity.TencentAdLyric;
-import cn.kuwo.mod.lyric.ILyrics;
 import cn.kuwo.mod.lyric.LyricsDefine;
 
 import static cn.kuwo.mod.lyric.LyricsSendNotice.sendSyncNotice_HeadPicFinished;
@@ -65,10 +64,9 @@ public class TencentAudioAdMgr {
                     if(httpResult != null && httpResult.data != null){
                         try {
                             parseResule(new String(httpResult.data));
-                            newAdMusic();
                         }catch (Throwable throwable){
                             adEntityList = null;
-                            relealseAdMusic();
+                            relealseRes();
                             throwable.printStackTrace();
                         }
                     }
@@ -114,7 +112,7 @@ public class TencentAudioAdMgr {
         }
     }
 
-    private void newAdMusic(){
+    private boolean newAdMusic(){
         if(adEntityList != null && !adEntityList.isEmpty()){
             adEntity = adEntityList.get(0);
             if(adEntity != null && adEntity.media != null &&
@@ -124,26 +122,32 @@ public class TencentAudioAdMgr {
                 adMusic.duration = adEntity.media.duration;
                 adMusic.name = adEntity.adTitle;
                 adMusic.artist = adEntity.advertiser;
+                return true;
             }
         }
+        return false;
     }
 
-    private void relealseAdMusic(){
+    public void relealseRes(){
         adMusic = null;
         adEntity = null;
     }
 
-    public void playStart(){
-        isPlaying = true;
-        //请求图片资源
-        downloadHeadPic(adEntity, adMusic);
-        //歌词
-        downloadLyric(adEntity, adMusic);
+    public boolean playStart(){
+        if(newAdMusic()) {
+            isPlaying = true;
+            //请求图片资源
+            downloadHeadPic(adEntity, adMusic);
+            //歌词
+            downloadLyric(adEntity, adMusic);
+            return true;
+        }
+        return false;
     }
 
     public boolean playFail(){
         if(isPlaying){//当前广告播放失败，直接播放下一曲音乐
-            relealseAdMusic();
+            relealseRes();
             isPlaying = false;
             return true;
         }
@@ -152,7 +156,7 @@ public class TencentAudioAdMgr {
 
     public boolean playStop(boolean end){
         if(isPlaying){//当前广告播放完成，直接播放下一曲音乐
-            relealseAdMusic();
+            relealseRes();
             isPlaying = false;
             return true;
         }
