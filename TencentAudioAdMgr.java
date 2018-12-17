@@ -38,6 +38,7 @@ import static cn.kuwo.mod.lyric.LyricsSendNotice.sendSyncNotice_LyricFinished;
 
 public class TencentAudioAdMgr {
     private static final String TAG = "TencentAudioAdMgr";
+    private static final int AD_MUSIC_RID = -1;//表示腾讯音频广告rid
 //    private static final int SONG_COVER_W = 320;
 //    private static final int SONG_COVER_H = 320;
     private List<AdEntity> adEntityList;
@@ -118,6 +119,7 @@ public class TencentAudioAdMgr {
             if(adEntity != null && adEntity.media != null &&
                     !TextUtils.isEmpty(adEntity.media.staticResource)){
                 adMusic = new Music();
+                adMusic.rid =AD_MUSIC_RID;
                 adMusic.filePath = adEntity.media.staticResource;
                 adMusic.duration = adEntity.media.duration;
                 adMusic.name = adEntity.adTitle;
@@ -128,7 +130,8 @@ public class TencentAudioAdMgr {
         return false;
     }
 
-    public void relealseRes(){
+    private void relealseRes(){
+        adEntityList = null;
         adMusic = null;
         adEntity = null;
     }
@@ -208,5 +211,12 @@ public class TencentAudioAdMgr {
         }else{
             sendSyncNotice_LyricFinished(adMusic, LyricsDefine.DownloadStatus.FAILED, false);
         }
+    }
+
+    public static boolean isAdMusic(Music music){
+        if(music != null && music.rid == AD_MUSIC_RID){
+            return true;
+        }
+        return false;
     }
 }
