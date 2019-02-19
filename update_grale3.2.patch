@@ -1,0 +1,292 @@
+Index: app/src/main/AndroidManifest.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/AndroidManifest.xml	(revision 53100)
++++ app/src/main/AndroidManifest.xml	(date 1550562213801)
+@@ -4,10 +4,6 @@
+     android:versionCode="3000"
+     android:versionName="3.0.0.0" >
+ 
+-    <uses-sdk
+-        android:minSdkVersion="11"
+-        android:targetSdkVersion="18" />
+-
+     <supports-screens
+         android:anyDensity="true"
+         android:largeScreens="true"
+Index: app/build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/build.gradle	(revision 53100)
++++ app/build.gradle	(date 1550563672695)
+@@ -18,6 +18,7 @@
+         versionCode 4045
+         versionName "4.0.4.5"
+ //        multiDexEnabled true
++        flavorDimensions "BYD"
+         buildConfigField "String","release_date","\""+day+"\""
+         buildConfigField "boolean", "isShow3GTipDialog", "true"
+         buildConfigField  "int"," copyright_year","" + (currentDate.getYear()+1900)
+@@ -61,7 +62,10 @@
+     }
+ 
+     lintOptions {
+-        //abortOnError false
++        checkReleaseBuilds false
++        // Or, if you prefer, you can continue to check for errors in release builds,
++        // but continue the build even when errors are found:
++        abortOnError false
+     }
+     sourceSets {
+ 
+@@ -112,7 +116,7 @@
+ 
+     applicationVariants.all {
+         variant ->
+-            variant.outputs.each {
++            variant.outputs.all {
+                 output ->
+                     def outputFile = output.outputFile
+                     if (outputFile != null && outputFile.name.endsWith('.apk')) {
+@@ -126,7 +130,10 @@
+                         String fileName = "kwplay_cr_" + defaultConfig.versionName +"_"+tempName+type+"_" +time+".apk";
+ //                        String fileName = "kwplay_cr_" + defaultConfig.versionName +"_"+tempName+type+".apk";
+                         System.out.println("fileName: " + fileName);
+-                        output.outputFile = new File(outputFile.parent, fileName);
++                        def outFile = output.outputFile
++                        if (outFile != null && outFile.name.endsWith('.apk')) {
++                            outputFileName = fileName  //  output.outputFile 改为 outputFileName
++                        }
+                     }
+             }
+     }
+@@ -134,16 +141,16 @@
+ }
+ 
+ dependencies {
+-    compile fileTree(include: ['*.jar'], dir: 'libs')
++    implementation fileTree(include: ['*.jar'], dir: 'libs')
+ //    compile fileTree(include: ['*.jar'], excludes: ['Android4.4.jar'], dir: 'libs')
+ //    provided files('libs/Android4.4.jar') //鼎微需求
+-    testCompile 'junit:junit:4.12'
+-    compile 'com.android.support:support-v4:25.1.0'
+-    debugCompile 'com.squareup.leakcanary:leakcanary-android:1.4-beta2'
+-    releaseCompile 'com.squareup.leakcanary:leakcanary-android-no-op:1.4-beta2'
+-    testCompile 'com.squareup.leakcanary:leakcanary-android-no-op:1.4-beta2'
+-    compile 'com.github.anrwatchdog:anrwatchdog:1.3.0'
+-    compile project(':drawable_skin_defualt')
+-    compile project(':ijkplayer')
+-    compile files('libs/umeng-analytics-v6.1.0.jar')
++    testImplementation 'junit:junit:4.12'
++    implementation 'com.android.support:support-v4:25.1.0'
++    debugImplementation 'com.squareup.leakcanary:leakcanary-android:1.4-beta2'
++    releaseImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.4-beta2'
++    testImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.4-beta2'
++    implementation 'com.github.anrwatchdog:anrwatchdog:1.3.0'
++    implementation project(':drawable_skin_defualt')
++    implementation project(':ijkplayer')
++    implementation files('libs/umeng-analytics-v6.1.0.jar')
+ }
+Index: drawable_skin_defualt/build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- drawable_skin_defualt/build.gradle	(revision 53100)
++++ drawable_skin_defualt/build.gradle	(date 1550562654017)
+@@ -3,7 +3,7 @@
+ 
+ android {
+     compileSdkVersion rootProject.ext.compileSdkVersion
+-    buildToolsVersion rootProject.ext.buildToolsVersion
++    buildToolsVersion '28.0.2'
+ 
+     defaultConfig {
+         //applicationId "cn.kuwo.skin_wood"
+@@ -11,6 +11,7 @@
+         targetSdkVersion 20
+         versionCode 1
+         versionName "1.0"
++        flavorDimensions "kuwo"
+     }
+     buildTypes {
+         release {
+@@ -20,7 +21,7 @@
+     }
+ }
+ dependencies {
+-    compile fileTree(dir: 'libs', include: ['*.jar'])
++    implementation fileTree(dir: 'libs', include: ['*.jar'])
+ 
+-    compile project(':drawable_yellow')
++    implementation project(':drawable_yellow')
+ }
+Index: drawable_skin_wood/build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- drawable_skin_wood/build.gradle	(revision 53100)
++++ drawable_skin_wood/build.gradle	(date 1550563799473)
+@@ -11,6 +11,7 @@
+         targetSdkVersion 20
+         versionCode 1
+         versionName "1.0"
++        flavorDimensions "kuwo"
+     }
+     signingConfigs {
+         release{
+@@ -32,14 +33,17 @@
+         }
+         applicationVariants.all {
+             variant ->
+-                variant.outputs.each {
++                variant.outputs.all {
+                     output ->
+                         def outputFile = output.outputFile
+                         if (outputFile != null && outputFile.name.endsWith('.apk')) {
+                             String tempName= name;
+                             tempName = tempName.replace("Release","");
+                             String fileName = "kuwowood.skin"
+-                            output.outputFile = new File(outputFile.parent, fileName);
++                            def outFile = output.outputFile
++                            if (outFile != null && outFile.name.endsWith('.apk')) {
++                                outputFileName = fileName  //  output.outputFile 改为 outputFileName
++                            }
+                         }
+                 }
+         }
+@@ -50,6 +54,6 @@
+ }
+ 
+ dependencies {
+-    compile fileTree(dir: 'libs', include: ['*.jar'])
++    implementation fileTree(dir: 'libs', include: ['*.jar'])
+     //compile project(':drawable_yellow')
+ }
+Index: drawable_yellow/build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- drawable_yellow/build.gradle	(revision 53100)
++++ drawable_yellow/build.gradle	(date 1550563799410)
+@@ -9,6 +9,7 @@
+         targetSdkVersion 20
+         versionCode 1
+         versionName "1.0"
++        flavorDimensions "kuwo"
+     }
+     buildTypes {
+         release {
+@@ -19,7 +20,7 @@
+ }
+ 
+ dependencies {
+-    compile fileTree(dir: 'libs', include: ['*.jar'])
+-    testCompile 'junit:junit:4.12'
+-    compile project(":size_base")
++    implementation fileTree(dir: 'libs', include: ['*.jar'])
++    testImplementation 'junit:junit:4.12'
++    implementation project(":size_base")
+ }
+Index: ijkplayer/build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- ijkplayer/build.gradle	(revision 53100)
++++ ijkplayer/build.gradle	(date 1550563799439)
+@@ -9,6 +9,7 @@
+         targetSdkVersion 22
+         versionCode 1
+         versionName "1.0"
++        flavorDimensions "kuwo"
+     }
+     sourceSets {
+         main {
+@@ -24,5 +25,5 @@
+ }
+ 
+ dependencies {
+-    compile fileTree(dir: 'libs', include: ['*.jar'])
++    implementation fileTree(dir: 'libs', include: ['*.jar'])
+ }
+Index: gradle/wrapper/gradle-wrapper.properties
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>GBK
+===================================================================
+--- gradle/wrapper/gradle-wrapper.properties	(revision 53100)
++++ gradle/wrapper/gradle-wrapper.properties	(date 1550561445527)
+@@ -1,7 +1,7 @@
+-#Wed Oct 21 11:34:03 PDT 2015
++#Tue Feb 19 15:30:45 CST 2019
++`=
+ distributionBase=GRADLE_USER_HOME
+ distributionPath=wrapper/dists
+ zipStoreBase=GRADLE_USER_HOME
+ zipStorePath=wrapper/dists
+-distributionUrl=https\://services.gradle.org/distributions/gradle-2.8-all.zip
+-`
+\ No newline at end of file
++distributionUrl=https\://services.gradle.org/distributions/gradle-4.6-all.zip
+Index: build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- build.gradle	(revision 53100)
++++ build.gradle	(date 1550562162626)
+@@ -3,9 +3,13 @@
+ buildscript {
+     repositories {
+         jcenter()
++        maven {
++            url 'https://maven.google.com/'
++            name 'Google'
++        }
+     }
+     dependencies {
+-        classpath 'com.android.tools.build:gradle:2.2.0'
++        classpath 'com.android.tools.build:gradle:3.2.0'
+ 
+         // NOTE: Do not place your application dependencies here; they belong
+         // in the individual module build.gradle files
+@@ -15,6 +19,10 @@
+ allprojects {
+     repositories {
+         jcenter()
++        maven {
++            url 'https://maven.google.com/'
++            name 'Google'
++        }
+     }
+ }
+ 
+@@ -24,5 +32,5 @@
+ 
+ ext {
+     compileSdkVersion = 25
+-    buildToolsVersion = "21.1.2"
++    buildToolsVersion = "28.0.2"
+ }
+\ No newline at end of file
+Index: size_base/build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- size_base/build.gradle	(revision 53100)
++++ size_base/build.gradle	(date 1550563799500)
+@@ -19,5 +19,5 @@
+ }
+ 
+ dependencies {
+-    compile fileTree(dir: 'libs', include: ['*.jar'])
++    implementation fileTree(dir: 'libs', include: ['*.jar'])
+ }
