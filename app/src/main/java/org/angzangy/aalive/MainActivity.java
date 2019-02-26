@@ -16,7 +16,7 @@ public class MainActivity extends BaseActivity {
         setContentView(R.layout.main_layout);
         if(savedInstanceState == null){
             getSupportFragmentManager().beginTransaction().
-                    replace(R.id.content, new PermissionFragment()).
+                    replace(R.id.content, new CameraFragment()).
                     commit();
         }
     }

@@ -4,11 +4,13 @@ import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 public class CameraFragment extends BaseFragment
 implements SurfaceTextureStateChangedListener, OnCameraPreviewSizeChangeListener{
@@ -55,6 +57,12 @@ implements SurfaceTextureStateChangedListener, OnCameraPreviewSizeChangeListener
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        view.findViewById(R.id.btn_switch_camera).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                switchCamera();
+            }
+        });
         mCameraGLView=(CameraPreviewGLView)view.findViewById(R.id.camera_preview);
         mCameraGLView.setSurfaceTextureStateChangedListener(this);
         mOrientationEventListener = new MyOrientationEventListener(getContext());
@@ -63,9 +71,13 @@ implements SurfaceTextureStateChangedListener, OnCameraPreviewSizeChangeListener
     @Override
     public void onSurfaceTextureCreated(SurfaceTexture surfaceTexture) {
         try {
-            openCamera();
-            setCameraParameter();
-            startCameraPreview();
+            if(PermissionHelper.hasCameraPermission(getActivity())) {
+                openCamera(ICameraDevices.CAMERA_FACING_FRONT);
+                setCameraParameter();
+                startCameraPreview();
+            } else {
+                PermissionHelper.requestCameraPermission(this);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -113,11 +125,11 @@ implements SurfaceTextureStateChangedListener, OnCameraPreviewSizeChangeListener
         }
     }
 
-    private void openCamera(){
+    private void openCamera(int cameraFacing){
         if(mCameraGLView != null && mCameraGLView.getSurfaceTexture() != null) {
             mCamera = new Camera2Devices((CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE));//CameraOneDevices();
             mCamera.setOnCameraPreviewSizeChangeListener(this);
-            mCamera.openCamera(mCameraGLView.getSurfaceTexture(), ICameraDevices.CAMERA_FACING_FRONT);
+            mCamera.openCamera(mCameraGLView.getSurfaceTexture(), cameraFacing);
         }
     }
 
@@ -145,12 +157,12 @@ implements SurfaceTextureStateChangedListener, OnCameraPreviewSizeChangeListener
         if(mOrientationEventListener != null) {
             mOrientationEventListener.enable();
         }
-        if(mCameraGLView!=null){
+        if(mCameraGLView != null){
             mCameraGLView.onResume();
+            if(mCamera == null){
+                onSurfaceTextureCreated(mCameraGLView.getSurfaceTexture());
+            }
         }
-        openCamera();
-        setCameraParameter();
-        startCameraPreview();
     }
 
     @Override
@@ -159,5 +171,25 @@ implements SurfaceTextureStateChangedListener, OnCameraPreviewSizeChangeListener
         if(mCameraGLView != null){
             mCameraGLView.release();
         }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (!PermissionHelper.hasCameraPermission(getActivity())) {
+            Toast.makeText(getActivity(),
+                    "Camera permission is needed to run this application", Toast.LENGTH_LONG).show();
+            PermissionHelper.launchPermissionSettings(getActivity());
+        } else {
+            openCamera(ICameraDevices.CAMERA_FACING_FRONT);
+            setCameraParameter();
+            startCameraPreview();
+        }
+    }
+
+    private void switchCamera(){
+        releaseCamera();
+        openCamera(ICameraDevices.CAMERA_FACING_BACK);
+        setCameraParameter();
+        startCameraPreview();
     }
 }

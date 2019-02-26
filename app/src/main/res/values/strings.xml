@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">AALive</string>
+    <string name="switch_camera">SwtichCamera</string>
 </resources>
