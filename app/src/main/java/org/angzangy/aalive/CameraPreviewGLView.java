@@ -78,6 +78,12 @@ implements SurfaceTexture.OnFrameAvailableListener{
         }
     }
 
+    public void setSharedGLContextStateChangedListener(SharedGLContextStateChangedListener listener) {
+        if(mRender != null) {
+            mRender.setSharedGLContextStateChangedListener(listener);
+        }
+    }
+
     public void setSurfaceTextureSize(int width, int height){
         if(mRender != null){
             mRender.setSurfaceTextureSize(width, height);

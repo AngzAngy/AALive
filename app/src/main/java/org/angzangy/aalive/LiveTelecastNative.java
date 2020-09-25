@@ -7,7 +7,7 @@ import java.nio.ByteBuffer;
  */
 
 public class LiveTelecastNative {
-    private final static String RTMP_URL = "rtmp://172.17.72.31:1935/myapp/test2";
+    private final static String RTMP_URL = "rtmp://172.17.71.63:1935/myapp/aalive";
     static {
         try {
             System.loadLibrary("aalive");

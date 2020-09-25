@@ -66,6 +66,13 @@ implements SurfaceTextureStateChangedListener, OnCameraPreviewSizeChangeListener
         mCameraGLView=(CameraPreviewGLView)view.findViewById(R.id.camera_preview);
         mCameraGLView.setSurfaceTextureStateChangedListener(this);
         mOrientationEventListener = new MyOrientationEventListener(getContext());
+        mCameraGLView.setSharedGLContextStateChangedListener(LiveTelecastController.getInstance());
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        LiveTelecastController.getInstance().release();
     }
 
     @Override

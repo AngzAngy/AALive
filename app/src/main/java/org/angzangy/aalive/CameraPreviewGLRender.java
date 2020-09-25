@@ -4,6 +4,7 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 import android.graphics.SurfaceTexture;
+import android.opengl.EGL14;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
@@ -18,16 +19,24 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
     private boolean mUpdateSurface = false;
     private SurfaceTextureStateChangedListener mSurfaceTextureStateChangedListener;
     private SurfaceTexture.OnFrameAvailableListener mOnFrameAvailableListener;
+    private SharedGLContextStateChangedListener mSharedGLContextStateChangedListener;
+    private Object mSharedContextSync = new Object();
     private SurfaceTextureRenderer mSurfaceRenderer;
     protected float[] mFboMVPMatrix = new float[16];
     private float [] mScreenMVPMatrix = new float[16];//render to screen model-view-project matrix
     private float[] mSTMatrix = new float[16];//texture transport matrix
     private TextureFbo mTextureFbo;
-    private int mWindowWidth;
-    private int mWindowHeight;
-    private LiveTelecastNative mLiveTelecastNative;
     private Texture2DRenderer mTexture2DRender;
 
+    private void waitSharedContext() {
+        synchronized (mSharedContextSync) {
+            try {
+                mSharedContextSync.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
     /*
      * render loop, in render thread
@@ -36,6 +45,7 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
      */
     @Override
     public void onDrawFrame(GL10 glUnused) {
+        waitSharedContext();
         synchronized(this) {
             if (mUpdateSurface) {
                 mSurfaceTexture.updateTexImage();
@@ -48,13 +58,9 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
             mTextureFbo.bindFbo(GLES20.GL_TEXTURE1);
             mSurfaceRenderer.renderTexture2D(mSurfaceTextId, mFboMVPMatrix, mSTMatrix);
             mTextureFbo.unBindFbo(GLES20.GL_TEXTURE1);
-            if(mLiveTelecastNative != null) {
-    //            mLiveTelecastNative.readFbo(mTextureFbo.getWidth(), mTextureFbo.getHeight());
-                mLiveTelecastNative.pushTexture(mTextureFbo.getTextureId(), mTextureFbo.getWidth(), mTextureFbo.getHeight());
-            }
+
+            mTexture2DRender.renderTexture2D(mTextureFbo.getTextureId(), mScreenMVPMatrix, mSTMatrix);
         }
-        GLES20.glViewport(0, 0, mWindowWidth, mWindowHeight);
-        mTexture2DRender.renderTexture2D(mTextureFbo.getTextureId(), mScreenMVPMatrix, mSTMatrix);
     }
 
     /*
@@ -66,8 +72,6 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
     @Override
     public void onSurfaceChanged(GL10 glUnused, int width, int height) {
         LogPrinter.d("GLSurfaceChanged ("+width+" x "+height+" )");
-        mWindowWidth = width;
-        mWindowHeight = height;
         if(mTextureFbo != null){
             mTextureFbo.delete();
         }else{
@@ -82,12 +86,9 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
         LogPrinter.d("SurfaceTextureSize ("+mSurfaceTextureWidth+" x "+mSurfaceTextureHeight+" )");
         mTextureFbo.createFbo(fboWidth, fboHeight, GLES20.GL_TEXTURE_2D);
 
-        if(mLiveTelecastNative != null){
-            mLiveTelecastNative.release();
-        }
-//        mLiveTelecastNative = new LiveTelecastNative();
-        if(mLiveTelecastNative != null) {
-            mLiveTelecastNative.onPreviewSizeChanged(mTextureFbo.getWidth(), mTextureFbo.getHeight());
+        if(mSharedGLContextStateChangedListener != null) {
+            mSharedGLContextStateChangedListener.onSharedGLContext(EGL14.eglGetCurrentContext(),
+                    mTextureFbo, mSharedContextSync);
         }
     }
 
@@ -155,10 +156,6 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
     }
 
     public void release(){
-        if(mLiveTelecastNative != null){
-            mLiveTelecastNative.release();
-            mLiveTelecastNative = null;
-        }
     }
 
     @Override
@@ -180,6 +177,10 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
 
     public void setOnFrameAvailableListener(SurfaceTexture.OnFrameAvailableListener listener){
         mOnFrameAvailableListener = listener;
+    }
+
+    public void setSharedGLContextStateChangedListener(SharedGLContextStateChangedListener listener) {
+         mSharedGLContextStateChangedListener = listener;
     }
 
     public void setSurfaceTextureSize(int width, int height){
