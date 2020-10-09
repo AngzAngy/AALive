@@ -6,8 +6,15 @@ import android.opengl.GLES20;
  * Created on 2017/3/20.
  */
 
-public class MosaicSurfaceTextureRenderer extends SurfaceTextureRenderer {
+public class ImageSizeSurfaceTextureRenderer extends SurfaceTextureRenderer {
     private int mImageSizeHandle;
+    private int mWidth;
+    private int mHeight;
+    public void setImageSize(int width, int height) {
+        mWidth = width;
+        mHeight = height;
+    }
+
     public final  static String OES_MosaicFragmentShader =
             "#extension GL_OES_EGL_image_external : require\n" +
                     "precision mediump float;\n" +
@@ -22,6 +29,7 @@ public class MosaicSurfaceTextureRenderer extends SurfaceTextureRenderer {
                     "  gl_FragColor = texture2D(sTexture, mosaicCoord/vImgSize);\n" +
                     "}\n";
 
+    @Override
     public void loadShader(String vertexShader, String fragmentShader) {
         super.loadShader(vertexShader, fragmentShader);
         mImageSizeHandle = GLES20.glGetUniformLocation(mProgram, "vImgSize");
@@ -30,8 +38,9 @@ public class MosaicSurfaceTextureRenderer extends SurfaceTextureRenderer {
         }
     }
 
+    @Override
     protected void setRendererParamaters(float[]mvpMatrix, float[]stMatrix){
         super.setRendererParamaters(mvpMatrix, stMatrix);
-        GLES20.glUniform2f(mImageSizeHandle, 640, 480);
+        GLES20.glUniform2f(mImageSizeHandle, mWidth, mHeight);
     }
 }

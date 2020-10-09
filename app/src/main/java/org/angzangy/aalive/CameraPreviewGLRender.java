@@ -21,7 +21,7 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
     private SurfaceTexture.OnFrameAvailableListener mOnFrameAvailableListener;
     private SharedGLContextStateChangedListener mSharedGLContextStateChangedListener;
     private Object mSharedContextSync = new Object();
-    private SurfaceTextureRenderer mSurfaceRenderer;
+    private ImageSizeSurfaceTextureRenderer mSurfaceRenderer;
     protected float[] mFboMVPMatrix = new float[16];
     private float [] mScreenMVPMatrix = new float[16];//render to screen model-view-project matrix
     private float[] mSTMatrix = new float[16];//texture transport matrix
@@ -72,11 +72,6 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
     @Override
     public void onSurfaceChanged(GL10 glUnused, int width, int height) {
         LogPrinter.d("GLSurfaceChanged ("+width+" x "+height+" )");
-        if(mTextureFbo != null){
-            mTextureFbo.delete();
-        }else{
-            mTextureFbo = new TextureFbo();
-        }
         int fboWidth = width;
         int fboHeight = height;
         if(mSurfaceTextureWidth > 0 && mSurfaceTextureHeight > 0) {
@@ -84,6 +79,13 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
             fboHeight = mSurfaceTextureHeight;
         }
         LogPrinter.d("SurfaceTextureSize ("+mSurfaceTextureWidth+" x "+mSurfaceTextureHeight+" )");
+        mSurfaceRenderer.setImageSize(fboWidth, fboHeight);
+
+        if(mTextureFbo != null){
+            mTextureFbo.delete();
+        }else{
+            mTextureFbo = new TextureFbo();
+        }
         mTextureFbo.createFbo(fboWidth, fboHeight, GLES20.GL_TEXTURE_2D);
 
         if(mSharedGLContextStateChangedListener != null) {
@@ -127,10 +129,10 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
         Matrix.rotateM(mScreenMVPMatrix, 0, 180, 0, 0, 1);
         Matrix.setIdentityM(mSTMatrix, 0);
         if(mSurfaceRenderer == null){
-            mSurfaceRenderer = new MosaicSurfaceTextureRenderer();
+            mSurfaceRenderer = new ImageSizeSurfaceTextureRenderer();
         }
         mSurfaceRenderer.loadShader(SurfaceTextureRenderer.VertexShader,
-                MosaicSurfaceTextureRenderer.OES_MosaicFragmentShader);
+                ImageSizeSurfaceTextureRenderer.OES_MosaicFragmentShader);
 
         mTexture2DRender = new Texture2DRenderer();
         mTexture2DRender.loadShader(Texture2DRenderer.VertexShader,

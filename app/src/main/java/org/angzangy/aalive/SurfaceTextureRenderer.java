@@ -43,6 +43,7 @@ public class SurfaceTextureRenderer extends Texture2DRenderer{
         GLES20.glBindTexture(GL_TEXTURE_EXTERNAL_OES, 0);
     }
 
+    @Override
     protected void setRendererParamaters(float[]mvpMatrix, float[]stMatrix){
         GLES20.glUniformMatrix4fv(muMVPMatrixHandle, 1, false, mvpMatrix, 0);
         GLES20.glUniformMatrix4fv(muSTMatrixHandle, 1, false, stMatrix, 0);

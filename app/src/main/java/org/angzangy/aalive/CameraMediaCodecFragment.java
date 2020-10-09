@@ -262,7 +262,7 @@ public class CameraMediaCodecFragment extends BaseFragment implements SurfaceHol
         private int mSurfaceTextId;
         private SurfaceTextureStateChangedListener mSurfaceTextureStateChangedListener;
         private SurfaceTexture.OnFrameAvailableListener mOnFrameAvailableListener;
-        private SurfaceTextureRenderer mSurfaceRenderer;
+        private ImageSizeSurfaceTextureRenderer mSurfaceRenderer;
         protected float[] mFboMVPMatrix = new float[16];
         private float [] mScreenMVPMatrix = new float[16];//render to screen model-view-project matrix
         private float[] mSTMatrix = new float[16];//texture transport matrix
@@ -327,9 +327,9 @@ public class CameraMediaCodecFragment extends BaseFragment implements SurfaceHol
             Matrix.setIdentityM(mScreenMVPMatrix, 0);
             Matrix.rotateM(mScreenMVPMatrix, 0, 180, 0, 0, 1);
             Matrix.setIdentityM(mSTMatrix, 0);
-            mSurfaceRenderer = new MosaicSurfaceTextureRenderer();
+            mSurfaceRenderer = new ImageSizeSurfaceTextureRenderer();
             mSurfaceRenderer.loadShader(SurfaceTextureRenderer.VertexShader,
-                    MosaicSurfaceTextureRenderer.OES_MosaicFragmentShader);
+                    ImageSizeSurfaceTextureRenderer.OES_MosaicFragmentShader);
 
             mTexture2DRender = new Texture2DRenderer();
             mTexture2DRender.loadShader(Texture2DRenderer.VertexShader,
@@ -350,6 +350,7 @@ public class CameraMediaCodecFragment extends BaseFragment implements SurfaceHol
             LogPrinter.d("SurfaceChanged ("+width+" x "+height+" )");
             int fboWidth = width;
             int fboHeight = height;
+            mSurfaceRenderer.setImageSize(fboWidth, fboHeight);
             mTextureFbo = new TextureFbo();
             mTextureFbo.createFbo(fboWidth, fboHeight, GLES20.GL_TEXTURE_2D);
 

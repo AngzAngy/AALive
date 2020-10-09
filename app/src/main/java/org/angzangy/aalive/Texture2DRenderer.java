@@ -51,12 +51,6 @@ public class Texture2DRenderer {
         mVertices.put(mVerticesData).position(0);
     }
 
-    public void onSurfaceCreated(){
-    }
-
-    public void onSurfaceChanged(int width, int height){
-    }
-
     public void loadShader(String vertexShader, String fragmentShader) {
         release();
         mProgram = ProgramShaderUtil.createProgram(vertexShader, fragmentShader);
