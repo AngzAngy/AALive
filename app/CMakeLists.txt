@@ -21,11 +21,11 @@ set_target_properties(
     PROPERTIES IMPORTED_LOCATION
     ${CMAKE_SOURCE_DIR}/src/main/jni/libx264/lib/${ANDROID_ABI}/libx264.a)
 
-add_library(faac STATIC IMPORTED)
+add_library(fdk-aac STATIC IMPORTED)
 set_target_properties(
-    faac
+    fdk-aac
     PROPERTIES IMPORTED_LOCATION
-    ${CMAKE_SOURCE_DIR}/src/main/jni/libfaac/lib/${ANDROID_ABI}/libfaac.a)
+    ${CMAKE_SOURCE_DIR}/src/main/jni/libfaac/lib/${ANDROID_ABI}/libfdk-aac.a)
 
 add_library(avutil STATIC IMPORTED)
 set_target_properties(
@@ -145,7 +145,7 @@ target_link_libraries( # Specifies the target library.
                        yuv_static
                        "-Wl,--whole-archive" # This is important,because those libraries depend each other
                        x264
-                       faac
+                       fdk-aac
                        avutil
                        swscale
                        swresample
