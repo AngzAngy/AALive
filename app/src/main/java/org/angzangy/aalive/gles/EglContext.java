@@ -1,4 +1,4 @@
-package org.angzangy.aalive;
+package org.angzangy.aalive.gles;
 
 import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
@@ -9,6 +9,8 @@ import android.opengl.EGLExt;
 import android.opengl.EGLSurface;
 import android.util.Log;
 import android.view.Surface;
+
+import org.angzangy.aalive.GlUtil;
 
 /**
  * Core EGL state (display, context, config).

@@ -1,10 +1,12 @@
-package org.angzangy.aalive;
+package org.angzangy.aalive.gles;
 
 import android.graphics.Bitmap;
 import android.opengl.EGL14;
 import android.opengl.EGLSurface;
 import android.opengl.GLES20;
 import android.util.Log;
+
+import org.angzangy.aalive.GlUtil;
 
 import java.io.BufferedOutputStream;
 import java.io.File;

@@ -12,6 +12,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import org.angzangy.aalive.gles.SurfaceTextureStateChangedListener;
+import org.angzangy.aalive.ui.CameraPreviewGLView;
+
 public class CameraFragment extends BaseFragment
 implements SurfaceTextureStateChangedListener, OnCameraPreviewSizeChangeListener{
     private static final String TAG = "MainActivity";
@@ -65,13 +68,18 @@ implements SurfaceTextureStateChangedListener, OnCameraPreviewSizeChangeListener
         });
         mCameraGLView=(CameraPreviewGLView)view.findViewById(R.id.camera_preview);
         mCameraGLView.setSurfaceTextureStateChangedListener(this);
+        mCameraGLView.setOnEGLContextStateChangeListener(LiveTelecastController.getInstance());
+        mCameraGLView.setOnTextureFboStateChangeListener(LiveTelecastController.getInstance());
         mOrientationEventListener = new MyOrientationEventListener(getContext());
-        mCameraGLView.setSharedGLContextStateChangedListener(LiveTelecastController.getInstance());
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        if(mCameraGLView != null) {
+            mCameraGLView.setOnEGLContextStateChangeListener(null);
+            mCameraGLView.setOnTextureFboStateChangeListener(null);
+        }
         LiveTelecastController.getInstance().release();
     }
 

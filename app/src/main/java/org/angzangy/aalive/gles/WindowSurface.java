@@ -1,7 +1,10 @@
-package org.angzangy.aalive;
+package org.angzangy.aalive.gles;
 
 import android.graphics.SurfaceTexture;
 import android.view.Surface;
+
+import org.angzangy.aalive.gles.EglContext;
+import org.angzangy.aalive.gles.EglSurfaceBase;
 
 /**
  * Recordable EGL window surface.

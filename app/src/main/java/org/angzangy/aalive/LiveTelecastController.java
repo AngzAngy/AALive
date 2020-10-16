@@ -1,12 +1,24 @@
 package org.angzangy.aalive;
 
+import android.graphics.SurfaceTexture;
 import android.opengl.EGLContext;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
+import android.view.Surface;
 
-public class LiveTelecastController implements SharedGLContextStateChangedListener {
+import org.angzangy.aalive.gles.EGLContextWrapper;
+import org.angzangy.aalive.gles.EglContext;
+import org.angzangy.aalive.gles.EglSurfaceBase;
+import org.angzangy.aalive.gles.OffscreenSurface;
+import org.angzangy.aalive.gles.OnEGLContextStateChangeListener;
+import org.angzangy.aalive.gles.OnTextureFboStateChangeListener;
+import org.angzangy.aalive.gles.Texture2DRenderer;
+import org.angzangy.aalive.gles.TextureFbo;
+import org.angzangy.aalive.gles.WindowSurface;
+
+public class LiveTelecastController implements OnEGLContextStateChangeListener, OnTextureFboStateChangeListener {
     private HandlerThread handlerThread;
     private TelecastHandler handler;
     private static LiveTelecastController instance = new LiveTelecastController();
@@ -22,11 +34,15 @@ public class LiveTelecastController implements SharedGLContextStateChangedListen
     }
 
     @Override
-    public void onSharedGLContext(EGLContext eglContext, TextureFbo textureFbo, Object sharedSync) {
-        handler.sharedEGLContext = eglContext;
+    public void onEGLContextCreated(EGLContextWrapper eglContext) {
+        handler.obtainMessage(TelecastHandler.INIT, eglContext.getEglContext14()).sendToTarget();
+    }
+
+    @Override
+    public void onTextureFboCreated(TextureFbo textureFbo) {
         handler.sharedTextureFbo = textureFbo;
-        handler.sharedSyncObj = sharedSync;
-        handler.sendEmptyMessage(TelecastHandler.INIT);
+        handler.obtainMessage(TelecastHandler.CREATE_SURFACE,
+                textureFbo.getWidth(), textureFbo.getHeight(), null).sendToTarget();
     }
 
     public void release() {
@@ -35,51 +51,65 @@ public class LiveTelecastController implements SharedGLContextStateChangedListen
 
     public class TelecastHandler extends Handler {
         public static final int INIT = 0;
-        public static final int TELECAST = 1;
-        public static final int UNINIT = 2;
-        public EGLContext sharedEGLContext;
+        public static final int CREATE_SURFACE = INIT + 1;
+        public static final int TELECAST = INIT + 2;
+        public static final int UNINIT = INIT + 3;
         public TextureFbo sharedTextureFbo;
-        public Object sharedSyncObj;
         private LiveTelecastNative liveTelecast;
-        private OffscreenSurface offscreenSurface;
+        private EglContext eglContext;
+        private EglSurfaceBase eglSurface;
         private Texture2DRenderer texture2DRender;
 
         public TelecastHandler(Looper looper) {
             super(looper);
         }
 
-        private void createGLContext() {
+        private void createGLContext(EGLContext sharedEGLContext) {
             releaseGLContext();
             liveTelecast = new LiveTelecastNative();
-            liveTelecast.onPreviewSizeChanged(sharedTextureFbo.getWidth(), sharedTextureFbo.getHeight());
-            offscreenSurface = new OffscreenSurface(new EglContext(sharedEGLContext,0), sharedTextureFbo.getWidth(), sharedTextureFbo.getHeight());
-            offscreenSurface.makeCurrent();
+            liveTelecast.onPreviewSizeChanged(640, 480);
+            eglContext = new EglContext(sharedEGLContext,0);
+            LogPrinter.e("createGLContext sharedEGLContext:"+sharedEGLContext+",eglContext:"+eglContext);
+        }
 
-            texture2DRender = new Texture2DRenderer();
-            texture2DRender.loadShader(Texture2DRenderer.VertexShader,
-                    Texture2DRenderer.BASE_TEXTURE_FragmentShader);
+        private void createSurface(Object surface, int width, int height) {
+            releaseGLSurface();
+            LogPrinter.e("createSurface surface:"+surface+",w x h = "+width +" x "+height);
+            if(surface == null) {
+                eglSurface = new OffscreenSurface(eglContext, width, height);
+                eglSurface.makeCurrent();
+            } else {
+                if(surface instanceof SurfaceTexture) {
+                    eglSurface = new WindowSurface(eglContext, (SurfaceTexture)surface);
+                    eglSurface.makeCurrent();
+                } else if(surface instanceof Surface) {
+                    eglSurface = new WindowSurface(eglContext, (Surface)surface, false);
+                    eglSurface.makeCurrent();
+                }
+            }
+            if(eglSurface != null) {
+                texture2DRender = new Texture2DRenderer();
+                texture2DRender.loadShader(Texture2DRenderer.VertexShader,
+                        Texture2DRenderer.BASE_TEXTURE_FragmentShader);
+            }
+            LogPrinter.e("createSurface eglSurface:"+eglSurface);
+        }
+
+        private void releaseGLSurface() {
+            if(texture2DRender != null) {
+                texture2DRender.release();
+                texture2DRender = null;
+            }
+            if(eglSurface != null) {
+                eglSurface.releaseEglSurface();
+                eglSurface = null;
+            }
         }
 
         private synchronized void releaseGLContext() {
             if(liveTelecast != null) {
                 liveTelecast.release();
                 liveTelecast = null;
-            }
-            if(texture2DRender != null) {
-                texture2DRender.release();
-                texture2DRender = null;
-            }
-            if(offscreenSurface != null) {
-                offscreenSurface.releaseEglSurface();
-                offscreenSurface = null;
-            }
-        }
-
-        private void notifyPreview() {
-            if(sharedSyncObj != null) {
-                synchronized (sharedSyncObj) {
-                    sharedSyncObj.notify();
-                }
             }
         }
 
@@ -91,14 +121,12 @@ public class LiveTelecastController implements SharedGLContextStateChangedListen
                 ret = true;
             }
 
-            notifyPreview();
-
-            if(liveTelecast != null) {
-                liveTelecast.readFbo(sharedTextureFbo.getWidth(), sharedTextureFbo.getHeight());
+            if(liveTelecast != null && ret) {
+                liveTelecast.readFbo(640, 480);
             }
 
-            if(offscreenSurface != null) {
-                offscreenSurface.swapBuffers();
+            if(eglSurface != null) {
+                eglSurface.swapBuffers();
             }
             return ret;
         }
@@ -108,8 +136,10 @@ public class LiveTelecastController implements SharedGLContextStateChangedListen
             super.handleMessage(msg);
             switch (msg.what) {
                 case INIT:
-                    createGLContext();
-                    notifyPreview();
+                    createGLContext((EGLContext)msg.obj);
+                    break;
+                case CREATE_SURFACE:
+                    createSurface(msg.obj, msg.arg1, msg.arg2);
                     sendEmptyMessage(TelecastHandler.TELECAST);
                     break;
                 case TELECAST:
@@ -118,6 +148,7 @@ public class LiveTelecastController implements SharedGLContextStateChangedListen
                     }
                     break;
                 case UNINIT:
+                    releaseGLSurface();
                     releaseGLContext();
                     break;
                 default:

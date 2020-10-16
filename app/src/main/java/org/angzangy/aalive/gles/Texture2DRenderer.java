@@ -1,8 +1,9 @@
-package org.angzangy.aalive;
+package org.angzangy.aalive.gles;
 
 import java.nio.FloatBuffer;
 import android.opengl.GLES20;
-import android.opengl.Matrix;
+
+import org.angzangy.aalive.NioBufferUtil;
 
 public class Texture2DRenderer {
     protected static final int FLOAT_SIZE_BYTES = 4;

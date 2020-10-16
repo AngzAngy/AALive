@@ -1,9 +1,13 @@
-package org.angzangy.aalive;
+package org.angzangy.aalive.ui;
 
 import android.content.Context;
 import android.opengl.GLSurfaceView;
 import android.util.AttributeSet;
 import android.graphics.SurfaceTexture;
+
+import org.angzangy.aalive.gles.OnTextureFboStateChangeListener;
+import org.angzangy.aalive.gles.SurfaceTextureStateChangedListener;
+import org.angzangy.aalive.gles.OnEGLContextStateChangeListener;
 
 public class CameraPreviewGLView extends GLSurfaceView
 implements SurfaceTexture.OnFrameAvailableListener{
@@ -78,9 +82,15 @@ implements SurfaceTexture.OnFrameAvailableListener{
         }
     }
 
-    public void setSharedGLContextStateChangedListener(SharedGLContextStateChangedListener listener) {
+    public void setOnEGLContextStateChangeListener(OnEGLContextStateChangeListener listener) {
         if(mRender != null) {
-            mRender.setSharedGLContextStateChangedListener(listener);
+            mRender.setOnEGLContextStateChangeListener(listener);
+        }
+    }
+
+    public void setOnTextureFboStateChangeListener(OnTextureFboStateChangeListener listener) {
+        if(mRender != null){
+            mRender.setOnTextureFboStateChangeListener(listener);
         }
     }
 

@@ -1,4 +1,4 @@
-package org.angzangy.aalive;
+package org.angzangy.aalive.ui;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -9,6 +9,16 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 
+import org.angzangy.aalive.ImageSizeSurfaceTextureRenderer;
+import org.angzangy.aalive.LogPrinter;
+import org.angzangy.aalive.gles.OnTextureFboStateChangeListener;
+import org.angzangy.aalive.gles.SurfaceTextureRenderer;
+import org.angzangy.aalive.gles.SurfaceTextureStateChangedListener;
+import org.angzangy.aalive.gles.Texture2DRenderer;
+import org.angzangy.aalive.gles.TextureFbo;
+import org.angzangy.aalive.gles.EGLContextWrapper;
+import org.angzangy.aalive.gles.OnEGLContextStateChangeListener;
+
 public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
     SurfaceTexture.OnFrameAvailableListener{
     private static final int GL_TEXTURE_EXTERNAL_OES = 0x8D65;
@@ -16,27 +26,17 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
     private int mSurfaceTextureWidth;
     private int mSurfaceTextureHeight;
     private int mSurfaceTextId;
-    private boolean mUpdateSurface = false;
+    private volatile boolean mUpdateTexImage = false;
     private SurfaceTextureStateChangedListener mSurfaceTextureStateChangedListener;
     private SurfaceTexture.OnFrameAvailableListener mOnFrameAvailableListener;
-    private SharedGLContextStateChangedListener mSharedGLContextStateChangedListener;
-    private Object mSharedContextSync = new Object();
+    private OnEGLContextStateChangeListener mOnEGLContextStateChangeListener;
+    private OnTextureFboStateChangeListener mOnTextureFboStateChangeListener;
     private ImageSizeSurfaceTextureRenderer mSurfaceRenderer;
     protected float[] mFboMVPMatrix = new float[16];
     private float [] mScreenMVPMatrix = new float[16];//render to screen model-view-project matrix
     private float[] mSTMatrix = new float[16];//texture transport matrix
     private TextureFbo mTextureFbo;
     private Texture2DRenderer mTexture2DRender;
-
-    private void waitSharedContext() {
-        synchronized (mSharedContextSync) {
-            try {
-                mSharedContextSync.wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 
     /*
      * render loop, in render thread
@@ -45,13 +45,10 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
      */
     @Override
     public void onDrawFrame(GL10 glUnused) {
-        waitSharedContext();
-        synchronized(this) {
-            if (mUpdateSurface) {
+            if (mUpdateTexImage) {
                 mSurfaceTexture.updateTexImage();
-                mUpdateSurface = false;
+                mUpdateTexImage = false;
             }
-        }
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         if(mSurfaceRenderer != null){
             GLES20.glViewport(0, 0, mTextureFbo.getWidth(), mTextureFbo.getHeight());
@@ -88,9 +85,9 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
         }
         mTextureFbo.createFbo(fboWidth, fboHeight, GLES20.GL_TEXTURE_2D);
 
-        if(mSharedGLContextStateChangedListener != null) {
-            mSharedGLContextStateChangedListener.onSharedGLContext(EGL14.eglGetCurrentContext(),
-                    mTextureFbo, mSharedContextSync);
+        if(mOnTextureFboStateChangeListener != null) {
+            LogPrinter.e("mybug onSurfaceChanged eglGetCurrentContext:"+EGL14.eglGetCurrentContext());
+            mOnTextureFboStateChangeListener.onTextureFboCreated(mTextureFbo);
         }
     }
 
@@ -102,6 +99,9 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
      */
     @Override
     public void onSurfaceCreated(GL10 glUnused, EGLConfig config) {
+        if(mOnEGLContextStateChangeListener != null) {
+            mOnEGLContextStateChangeListener.onEGLContextCreated(new EGLContextWrapper(null, EGL14.eglGetCurrentContext()));
+        }
 
         GLES20.glEnable(GLES20.GL_TEXTURE);
 
@@ -144,9 +144,6 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
             mSurfaceTexture = new SurfaceTexture(mSurfaceTextId);
             mSurfaceTexture.setOnFrameAvailableListener(this);
 
-            synchronized(this) {
-                mUpdateSurface = false;
-            }
             if(mSurfaceTextureStateChangedListener !=null){
                 mSurfaceTextureStateChangedListener.onSurfaceTextureCreated(mSurfaceTexture);
             }
@@ -161,12 +158,12 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
     }
 
     @Override
-    synchronized public void onFrameAvailable(SurfaceTexture surface) {
+    public void onFrameAvailable(SurfaceTexture surface) {
         /* For simplicity, SurfaceTexture calls here when it has new
          * data available.  Call may come in from some random thread,
          * so let's be safe and use synchronize. No OpenGL calls can be done here.
          */
-        mUpdateSurface = true;
+        mUpdateTexImage = true;
         if(mOnFrameAvailableListener != null){
             mOnFrameAvailableListener.onFrameAvailable(surface);
         }
@@ -181,15 +178,19 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
         mOnFrameAvailableListener = listener;
     }
 
-    public void setSharedGLContextStateChangedListener(SharedGLContextStateChangedListener listener) {
-         mSharedGLContextStateChangedListener = listener;
-    }
-
     public void setSurfaceTextureSize(int width, int height){
         if (width < 0 || width < 0) {
             throw new IllegalArgumentException("Size cannot be negative.");
         }
         mSurfaceTextureWidth = width;
         mSurfaceTextureHeight = height;
+    }
+
+    public void setOnEGLContextStateChangeListener(OnEGLContextStateChangeListener listener) {
+        mOnEGLContextStateChangeListener = listener;
+    }
+
+    public void setOnTextureFboStateChangeListener(OnTextureFboStateChangeListener listener) {
+        mOnTextureFboStateChangeListener = listener;
     }
 }

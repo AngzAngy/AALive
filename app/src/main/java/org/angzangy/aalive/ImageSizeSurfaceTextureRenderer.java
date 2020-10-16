@@ -2,6 +2,8 @@ package org.angzangy.aalive;
 
 import android.opengl.GLES20;
 
+import org.angzangy.aalive.gles.SurfaceTextureRenderer;
+
 /**
  * Created on 2017/3/20.
  */

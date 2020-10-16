@@ -21,11 +21,17 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import org.angzangy.aalive.codec.AVCSurfaceEncoder;
+import org.angzangy.aalive.gles.EglContext;
+import org.angzangy.aalive.gles.SurfaceTextureRenderer;
+import org.angzangy.aalive.gles.SurfaceTextureStateChangedListener;
+import org.angzangy.aalive.gles.Texture2DRenderer;
+import org.angzangy.aalive.gles.TextureFbo;
+import org.angzangy.aalive.gles.WindowSurface;
 
 import java.io.IOException;
 
 public class CameraMediaCodecFragment extends BaseFragment implements SurfaceHolder.Callback,
-    SurfaceTextureStateChangedListener{
+        SurfaceTextureStateChangedListener {
     private ICameraDevices mCamera;
     private SurfaceView glSurfaceView;
     private SurfaceTexture mSurfaceTexture;
