@@ -19,8 +19,8 @@
         android:layout_alignParentTop="true"
         android:text="CloseFile"
         />
-    <SurfaceView
-            android:id="@+id/gl_surface_view"
+    <org.angzangy.aalive.ui.CameraPreviewGLView
+            android:id="@+id/preview_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_centerInParent="true"

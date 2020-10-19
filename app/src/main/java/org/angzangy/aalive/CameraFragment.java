@@ -24,6 +24,7 @@ implements SurfaceTextureStateChangedListener, OnCameraPreviewSizeChangeListener
     private MyOrientationEventListener mOrientationEventListener;
     // The degrees of the device rotated clockwise from its natural orientation.
     private int mOrientation = OrientationEventListener.ORIENTATION_UNKNOWN;
+    private LiveTelecastController liveTelecastController;
 
     private class MyOrientationEventListener extends OrientationEventListener{
         public MyOrientationEventListener(Context context){
@@ -60,6 +61,7 @@ implements SurfaceTextureStateChangedListener, OnCameraPreviewSizeChangeListener
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        liveTelecastController = new LiveTelecastController();
         view.findViewById(R.id.btn_switch_camera).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -68,8 +70,8 @@ implements SurfaceTextureStateChangedListener, OnCameraPreviewSizeChangeListener
         });
         mCameraGLView=(CameraPreviewGLView)view.findViewById(R.id.camera_preview);
         mCameraGLView.setSurfaceTextureStateChangedListener(this);
-        mCameraGLView.setOnEGLContextStateChangeListener(LiveTelecastController.getInstance());
-        mCameraGLView.setOnTextureFboStateChangeListener(LiveTelecastController.getInstance());
+        mCameraGLView.setOnEGLContextStateChangeListener(liveTelecastController);
+        mCameraGLView.setOnTextureFboStateChangeListener(liveTelecastController);
         mOrientationEventListener = new MyOrientationEventListener(getContext());
     }
 
@@ -80,7 +82,7 @@ implements SurfaceTextureStateChangedListener, OnCameraPreviewSizeChangeListener
             mCameraGLView.setOnEGLContextStateChangeListener(null);
             mCameraGLView.setOnTextureFboStateChangeListener(null);
         }
-        LiveTelecastController.getInstance().release();
+        liveTelecastController.sendReleaseMsg();
     }
 
     @Override
