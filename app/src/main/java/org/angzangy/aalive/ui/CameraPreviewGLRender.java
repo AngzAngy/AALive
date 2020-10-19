@@ -57,6 +57,10 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
             mTextureFbo.unBindFbo(GLES20.GL_TEXTURE1);
 
             mTexture2DRender.renderTexture2D(mTextureFbo.getTextureId(), mScreenMVPMatrix, mSTMatrix);
+
+            if(mOnTextureFboStateChangeListener != null) {
+                mOnTextureFboStateChangeListener.onTextureFboUpdated(mTextureFbo);
+            }
         }
     }
 

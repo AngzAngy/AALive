@@ -78,6 +78,10 @@ public class GLESEnvController{
         return renderMode;
     }
 
+    public boolean isContinuouslyRender() {
+        return renderMode == RENDERMODE_CONTINUOUSLY;
+    }
+
     protected void releaseGLSurface() {
         if(texture2DRender != null) {
             texture2DRender.release();
@@ -113,7 +117,7 @@ public class GLESEnvController{
         if(eglSurface != null && ret) {
             eglSurface.swapBuffers();
         }
-        return (renderMode == RENDERMODE_CONTINUOUSLY);
+        return isContinuouslyRender();
     }
 
     public void sendCreateEGLContextMsg(EGLContext sharedContext) {

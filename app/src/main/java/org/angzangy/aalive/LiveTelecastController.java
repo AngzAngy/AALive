@@ -23,6 +23,11 @@ public class LiveTelecastController extends GLESEnvController implements OnEGLCo
     }
 
     @Override
+    public void onTextureFboUpdated(TextureFbo textureFbo) {
+
+    }
+
+    @Override
     protected void createGLContext(EGLContext sharedEGLContext) {
         super.createGLContext(sharedEGLContext);
         liveTelecast = new LiveTelecastNative();

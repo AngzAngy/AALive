@@ -66,6 +66,13 @@ public class CameraMediaCodecFragment extends BaseFragment implements SurfaceTex
                     dumpFileController.sendSetSharedTextureFbo(textureFbo);
                 }
             }
+
+            @Override
+            public void onTextureFboUpdated(TextureFbo textureFbo) {
+                if(dumpFileController != null) {
+                    dumpFileController.sendFrameAvailableMsg();
+                }
+            }
         });
         glSurfaceView.setSurfaceTextureStateChangedListener(this);
     }
@@ -96,6 +103,7 @@ public class CameraMediaCodecFragment extends BaseFragment implements SurfaceTex
     public void createDumpController() {
         fileReceiver = new FileReceiver(getActivity().getExternalCacheDir(), "aalive.h264");
         dumpFileController = new AVCDumpFileController();
+        dumpFileController.setRenderMode(AVCDumpFileController.RENDERMODE_WHEN_DIRTY);
         dumpFileController.setFileReceiver(fileReceiver);
     }
 

@@ -7,12 +7,10 @@ import org.angzangy.aalive.codec.AVCSurfaceEncoder;
 import org.angzangy.aalive.gles.EGLContextWrapper;
 import org.angzangy.aalive.gles.GLESEnvController;
 import org.angzangy.aalive.gles.OnEGLContextStateChangeListener;
-import org.angzangy.aalive.gles.OnTextureFboStateChangeListener;
-import org.angzangy.aalive.gles.TextureFbo;
 
 import java.io.IOException;
 
-public class AVCDumpFileController extends GLESEnvController implements OnEGLContextStateChangeListener, OnTextureFboStateChangeListener {
+public class AVCDumpFileController extends GLESEnvController implements OnEGLContextStateChangeListener {
     private AVCSurfaceEncoder avcEncoder;
     private FileReceiver fileReceiver;
     private Rect viewRect;
@@ -22,11 +20,6 @@ public class AVCDumpFileController extends GLESEnvController implements OnEGLCon
     @Override
     public void onEGLContextCreated(EGLContextWrapper eglContext) {
         sendCreateEGLContextMsg(eglContext.getEglContext14());
-    }
-
-    @Override
-    public void onTextureFboCreated(TextureFbo textureFbo) {
-        sendSetSharedTextureFbo(textureFbo);
     }
 
     public void setFileReceiver(FileReceiver fileReceiver) {
@@ -55,6 +48,11 @@ public class AVCDumpFileController extends GLESEnvController implements OnEGLCon
     }
 
     @Override
+    public boolean isContinuouslyRender() {
+        return recordingEnabled && super.isContinuouslyRender();
+    }
+
+    @Override
     protected boolean onDrawFrame() {
         if(recordingEnabled && eglSurface != null && avcEncoder != null
                 && sharedTextureFbo != null) {
@@ -69,7 +67,7 @@ public class AVCDumpFileController extends GLESEnvController implements OnEGLCon
             eglSurface.setPresentationTime(computePresentationTimeNsec(frameIndex++, AVCSurfaceEncoder.getFrameRate()));
             eglSurface.swapBuffers();
         }
-        return recordingEnabled;
+        return isContinuouslyRender();
     }
 
     private void computeViewPort() {
