@@ -34,7 +34,6 @@ public class GLESEnvController{
         handlerThread = new HandlerThread("GLESEnvControllerThread");
         handlerThread.start();
         handler = new EnvHandler(handlerThread.getLooper());
-        handler.setGLESEnvController(this);
     }
 
     protected void createGLContext(EGLContext sharedEGLContext) {
@@ -121,7 +120,8 @@ public class GLESEnvController{
     }
 
     public void sendCreateEGLContextMsg(EGLContext sharedContext) {
-        handler.obtainMessage(EnvHandler.MSG_CREATE_EGLCONTEXT, sharedContext).sendToTarget();
+        Object [] wrapper = new Object[]{this, sharedContext};
+        handler.obtainMessage(EnvHandler.MSG_CREATE_EGLCONTEXT, wrapper).sendToTarget();
     }
 
     public void sendCreateEGLSurface(Object surface) {
@@ -133,35 +133,32 @@ public class GLESEnvController{
     }
 
     public void sendCreateEGLSurface(Object surface, int width, int height) {
+        Object [] wrapper = new Object[]{this, surface};
         handler.obtainMessage(EnvHandler.MSG_CREATE_SURFACE,
-                width, height, surface).sendToTarget();
+                width, height, wrapper).sendToTarget();
     }
 
     public void sendSetSharedTextureFbo(TextureFbo sharedTextureFbo) {
-        handler.obtainMessage(EnvHandler.MSG_SET_SHAREDFBO, sharedTextureFbo).sendToTarget();
+        Object [] wrapper = new Object[]{this, sharedTextureFbo};
+        handler.obtainMessage(EnvHandler.MSG_SET_SHAREDFBO, wrapper).sendToTarget();
     }
 
     public void sendFrameAvailableMsg() {
-        handler.sendEmptyMessage(EnvHandler.MSG_DRAW_FRAME);
+        handler.obtainMessage(EnvHandler.MSG_DRAW_FRAME, this).sendToTarget();
     }
 
     public void sendReleaseMsg() {
-        handler.sendEmptyMessage(EnvHandler.MSG_SHUTDOWN);
+        handler.obtainMessage(EnvHandler.MSG_SHUTDOWN, this).sendToTarget();
     }
 
-    public class EnvHandler extends Handler {
+    private static class EnvHandler extends Handler {
         public static final int MSG_CREATE_EGLCONTEXT = 0;
         public static final int MSG_CREATE_SURFACE = MSG_CREATE_EGLCONTEXT + 1;
         public static final int MSG_DRAW_FRAME = MSG_CREATE_EGLCONTEXT + 2;
         public static final int MSG_SHUTDOWN = MSG_CREATE_EGLCONTEXT + 3;
         public static final int MSG_SET_SHAREDFBO = MSG_CREATE_EGLCONTEXT + 4;
-        private GLESEnvController controller;
         public EnvHandler(Looper looper) {
             super(looper);
-        }
-
-        public void setGLESEnvController(GLESEnvController envController) {
-            controller = envController;
         }
 
         @Override
@@ -169,30 +166,33 @@ public class GLESEnvController{
             super.handleMessage(msg);
             switch (msg.what) {
                 case MSG_CREATE_EGLCONTEXT:
-                    if(controller != null) {
-                        controller.createGLContext((EGLContext) msg.obj);
+                    Object[] wrapper = (Object[]) msg.obj;
+                    if(wrapper != null && wrapper.length == 2) {
+                        ((GLESEnvController)wrapper[0]).createGLContext((EGLContext)wrapper[1]);
                     }
                     break;
                 case MSG_CREATE_SURFACE:
-                    if(controller != null) {
-                        controller.createSurface(msg.obj, msg.arg1, msg.arg2);
+                    wrapper = (Object[]) msg.obj;
+                    if(wrapper != null && wrapper.length == 2) {
+                        ((GLESEnvController)wrapper[0]).createSurface(wrapper[1], msg.arg1, msg.arg2);
                     }
                     break;
                 case MSG_SET_SHAREDFBO:
-                    if(controller != null) {
-                        controller.setSharedTextureFbo((TextureFbo) msg.obj);
+                    wrapper = (Object[]) msg.obj;
+                    if(wrapper != null && wrapper.length == 2) {
+                        ((GLESEnvController)wrapper[0]).setSharedTextureFbo((TextureFbo)wrapper[1]);
                     }
                     break;
                 case MSG_DRAW_FRAME:
-                    if(controller != null) {
-                        if (controller.onDrawFrame()) {
-                            sendEmptyMessage(MSG_DRAW_FRAME);
+                    if(msg.obj != null) {
+                        if (((GLESEnvController)msg.obj).onDrawFrame()) {
+                            obtainMessage(MSG_DRAW_FRAME, msg.obj).sendToTarget();
                         }
                     }
                     break;
                 case MSG_SHUTDOWN:
-                    if(controller != null) {
-                        controller.release();
+                    if(msg.obj != null) {
+                        ((GLESEnvController)msg.obj).release();
                     }
                     break;
                 default:
