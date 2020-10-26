@@ -1,14 +1,18 @@
 package org.angzangy.aalive;
 
+import org.angzangy.aalive.codec.FrameReceiver;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 
-public class FileReceiver implements DataReceiver {
+public abstract class FileReceiver implements FrameReceiver {
     private File file;
-    private OutputStream outputStream;
+    private FileChannel fileChannel;
+
     public FileReceiver(File dirFile, String fileName) {
         this(new File(dirFile, fileName));
     }
@@ -19,34 +23,34 @@ public class FileReceiver implements DataReceiver {
 
     public void openOutputStream() {
         try {
-            outputStream = new FileOutputStream(file);
+            FileOutputStream outputStream = new FileOutputStream(file);
+            fileChannel = outputStream.getChannel();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
-            outputStream = null;
+            fileChannel = null;
         }
     }
 
     public void closeOutputStream() {
-        if(outputStream != null) {
+        if(fileChannel != null) {
             try {
-                outputStream.close();
+                fileChannel.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }finally {
-                outputStream = null;
+                fileChannel = null;
             }
         }
     }
 
-    @Override
-    public void receive(Buffer buffer) {
-        if(outputStream != null && buffer!= null && buffer.buf != null) {
-            try {
-                outputStream.write(buffer.buf, buffer.offsetInBytes, buffer.sizeInBytes);
-            } catch (IOException e) {
-                e.printStackTrace();
-                closeOutputStream();
+    public int write(ByteBuffer buffer) {
+        try {
+            if (fileChannel != null && fileChannel.isOpen()) {
+                return fileChannel.write(buffer);
             }
+        }catch (Throwable throwable) {
+            throwable.printStackTrace();
         }
+        return 0;
     }
 }

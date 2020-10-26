@@ -151,6 +151,14 @@ public class GLESEnvController{
         handler.obtainMessage(EnvHandler.MSG_SHUTDOWN, this).sendToTarget();
     }
 
+    public void queueEvent(Runnable runnable, boolean isFront) {
+        if(isFront) {
+            handler.postAtFrontOfQueue(runnable);
+        }else{
+            handler.post(runnable);
+        }
+    }
+
     private static class EnvHandler extends Handler {
         public static final int MSG_CREATE_EGLCONTEXT = 0;
         public static final int MSG_CREATE_SURFACE = MSG_CREATE_EGLCONTEXT + 1;

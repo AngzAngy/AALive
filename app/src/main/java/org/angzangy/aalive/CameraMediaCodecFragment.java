@@ -18,12 +18,14 @@ import org.angzangy.aalive.gles.SurfaceTextureStateChangedListener;
 import org.angzangy.aalive.gles.TextureFbo;
 import org.angzangy.aalive.ui.CameraPreviewGLView;
 
-public class CameraMediaCodecFragment extends BaseFragment implements SurfaceTextureStateChangedListener {
+import java.io.File;
+
+public class CameraMediaCodecFragment extends BaseFragment implements SurfaceTextureStateChangedListener,
+        OnCameraPreviewSizeChangeListener{
     private ICameraDevices mCamera;
     private CameraPreviewGLView glSurfaceView;
     private SurfaceTexture mSurfaceTexture;
-    private AVCDumpFileController dumpFileController;
-    private FileReceiver fileReceiver;
+    private AVCSenderController avcSenderController;
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -34,43 +36,45 @@ public class CameraMediaCodecFragment extends BaseFragment implements SurfaceTex
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        createDumpController();
+        createController();
         view.findViewById(R.id.bnt_start_live).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                fileReceiver.openOutputStream();
-                if(dumpFileController != null){
-                    dumpFileController.setRecordingEnabled(true);
+                if(avcSenderController != null){
+                    avcSenderController.openStream();
+                    avcSenderController.setRecordingEnabled(true);
                 }
             }
         });
         view.findViewById(R.id.bnt_close_file).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                fileReceiver.closeOutputStream();
+                if(avcSenderController != null) {
+                    avcSenderController.closeStream();
+                }
             }
         });
         glSurfaceView = ((CameraPreviewGLView) view.findViewById(R.id.preview_view));
         glSurfaceView.setOnEGLContextStateChangeListener(new OnEGLContextStateChangeListener() {
             @Override
             public void onEGLContextCreated(EGLContextWrapper eglContext) {
-                if(dumpFileController != null) {
-                    dumpFileController.sendCreateEGLContextMsg(eglContext.getEglContext14());
+                if(avcSenderController != null) {
+                    avcSenderController.sendCreateEGLContextMsg(eglContext.getEglContext14());
                 }
             }
         });
         glSurfaceView.setOnTextureFboStateChangeListener(new OnTextureFboStateChangeListener() {
             @Override
             public void onTextureFboCreated(TextureFbo textureFbo) {
-                if(dumpFileController != null) {
-                    dumpFileController.sendSetSharedTextureFbo(textureFbo);
+                if(avcSenderController != null) {
+                    avcSenderController.sendSetSharedTextureFbo(textureFbo);
                 }
             }
 
             @Override
             public void onTextureFboUpdated(TextureFbo textureFbo) {
-                if(dumpFileController != null) {
-                    dumpFileController.sendFrameAvailableMsg();
+                if(avcSenderController != null) {
+                    avcSenderController.sendFrameAvailableMsg();
                 }
             }
         });
@@ -80,8 +84,8 @@ public class CameraMediaCodecFragment extends BaseFragment implements SurfaceTex
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        if(dumpFileController != null){
-            dumpFileController.sendReleaseMsg();
+        if(avcSenderController != null){
+            avcSenderController.sendReleaseMsg();
         }
         stopCameraPreview();
         releaseCamera();
@@ -100,11 +104,9 @@ public class CameraMediaCodecFragment extends BaseFragment implements SurfaceTex
         }
     }
 
-    public void createDumpController() {
-        fileReceiver = new FileReceiver(getActivity().getExternalCacheDir(), "aalive.h264");
-        dumpFileController = new AVCDumpFileController();
-        dumpFileController.setRenderMode(AVCDumpFileController.RENDERMODE_WHEN_DIRTY);
-        dumpFileController.setFileReceiver(fileReceiver);
+    public void createController() {
+        File file = new File(getActivity().getExternalCacheDir(), "aalive.h264");
+        avcSenderController = new AVCDumpFileController(file);
     }
 
     @Override
@@ -115,10 +117,6 @@ public class CameraMediaCodecFragment extends BaseFragment implements SurfaceTex
                 openCamera(surfaceTexture, ICameraDevices.CAMERA_FACING_FRONT);
                 setCameraParameter();
                 startCameraPreview();
-                if(dumpFileController != null) {
-                    dumpFileController.startVideoEncoder(1280, 720);
-                    dumpFileController.sendFrameAvailableMsg();
-                }
             } else {
                 PermissionHelper.requestCameraPermission(this);
             }
@@ -159,6 +157,7 @@ public class CameraMediaCodecFragment extends BaseFragment implements SurfaceTex
     private void openCamera(SurfaceTexture surfaceTexture, int cameraFacing){
         if(surfaceTexture != null) {
             mCamera = new Camera2Devices((CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE));//CameraOneDevices();
+            mCamera.setOnCameraPreviewSizeChangeListener(this);
             mCamera.openCamera(surfaceTexture, cameraFacing);
         }
     }
@@ -168,6 +167,14 @@ public class CameraMediaCodecFragment extends BaseFragment implements SurfaceTex
             mCamera.releaseCamera();
             mCamera.setOnCameraPreviewSizeChangeListener(null);
             mCamera = null;
+        }
+    }
+
+    @Override
+    public void OnCameraPreviewSize(int width, int height) {
+        if(avcSenderController != null) {
+            avcSenderController.startVideoEncoder(width, height);
+            avcSenderController.sendFrameAvailableMsg();
         }
     }
 }

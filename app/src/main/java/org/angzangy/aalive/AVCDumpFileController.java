@@ -1,100 +1,46 @@
 package org.angzangy.aalive;
 
-import android.graphics.Rect;
-import android.opengl.GLES20;
+import android.media.MediaCodec;
 
-import org.angzangy.aalive.codec.AVCSurfaceEncoder;
-import org.angzangy.aalive.gles.EGLContextWrapper;
-import org.angzangy.aalive.gles.GLESEnvController;
-import org.angzangy.aalive.gles.OnEGLContextStateChangeListener;
+import java.io.File;
+import java.nio.ByteBuffer;
 
-import java.io.IOException;
-
-public class AVCDumpFileController extends GLESEnvController implements OnEGLContextStateChangeListener {
-    private AVCSurfaceEncoder avcEncoder;
+public class AVCDumpFileController extends AVCSenderController{
     private FileReceiver fileReceiver;
-    private Rect viewRect;
-    private boolean recordingEnabled;
-    private long frameIndex;
-    private int videoWidth, videoHeight;
-    @Override
-    public void onEGLContextCreated(EGLContextWrapper eglContext) {
-        sendCreateEGLContextMsg(eglContext.getEglContext14());
-    }
-
-    public void setFileReceiver(FileReceiver fileReceiver) {
-        this.fileReceiver = fileReceiver;
-    }
-
-    public void setRecordingEnabled(boolean b) {
-        recordingEnabled = b;
-    }
-
-    public void startVideoEncoder(int videoWidth, int videoHeight){
-        if(recordingEnabled){
-            return;
-        }
-        this.videoWidth = videoWidth;
-        this.videoHeight = videoHeight;
-        final int BIT_RATE = 4000000;   // 4Mbps
-        try {
-            avcEncoder = new AVCSurfaceEncoder(videoWidth, videoHeight, BIT_RATE, fileReceiver);
-            sendCreateEGLSurface(avcEncoder.getInputSurface());
-            avcEncoder.asyncStart();
-            recordingEnabled = true;
-        }catch (IOException e){
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public boolean isContinuouslyRender() {
-        return recordingEnabled && super.isContinuouslyRender();
-    }
-
-    @Override
-    protected boolean onDrawFrame() {
-        if(recordingEnabled && eglSurface != null && avcEncoder != null
-                && sharedTextureFbo != null) {
-            computeViewPort();
-            eglSurface.makeCurrent();
-            GLES20.glViewport(viewRect.left, viewRect.top, viewRect.width(), viewRect.height());
-            GLES20.glClearColor(1.0f, 0, 0, 1);
-            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-
-            avcEncoder.asyncFrameAvailable();
-            texture2DRender.renderTexture2D(sharedTextureFbo.getTextureId(), GlUtil.IDENTITY_MATRIX, GlUtil.IDENTITY_MATRIX);
-            eglSurface.setPresentationTime(computePresentationTimeNsec(frameIndex++, AVCSurfaceEncoder.getFrameRate()));
-            eglSurface.swapBuffers();
-        }
-        return isContinuouslyRender();
-    }
-
-    private void computeViewPort() {
-        if(viewRect == null) {
-            viewRect = new Rect();
-            int winWidth = sharedTextureFbo.getWidth();
-            int winHeight = sharedTextureFbo.getHeight();
-            float windowAspect = (float) winHeight / (float) winWidth;
-            int outWidth, outHeight;
-            if(videoHeight > windowAspect * videoWidth){
-                outWidth = videoWidth;
-                outHeight = (int)(windowAspect * videoWidth);
-            } else {
-                outWidth = (int)(videoHeight / windowAspect);
-                outHeight = videoHeight;
+    public AVCDumpFileController (File file) {
+        fileReceiver = new FileReceiver(file){
+            ByteBuffer configBuffer;
+            @Override
+            public void receive(ByteBuffer encodedData, MediaCodec.BufferInfo bufferInfo) {
+                encodedData.position(bufferInfo.offset);
+                encodedData.limit(bufferInfo.offset + bufferInfo.size);
+                if((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
+                    configBuffer = ByteBuffer.allocateDirect(bufferInfo.size);
+                    configBuffer.put(encodedData);
+                } else {
+                    if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0) {
+                        // For H.264 key frame prepend SPS and PPS NALs at the start.
+                        configBuffer.rewind();
+                        write(configBuffer);
+                    }
+                    write(encodedData);
+                }
             }
-            int xoffset = (videoWidth - outWidth) / 2;
-            int yoffset = (videoHeight - outHeight) / 2;
-            viewRect.set(xoffset, yoffset, xoffset + outWidth, yoffset + outHeight);
-        }
-
+        };
+        setFrameReceiver(fileReceiver);
     }
-    /**
-     * Generates the presentation time for frame N, in nanoseconds.
-     */
-    private static long computePresentationTimeNsec(long frameIndex, int frameRate) {
-        final long ONE_BILLION = 1000000000;
-        return frameIndex * ONE_BILLION / frameRate;
+
+    @Override
+    protected void openStream() {
+        if(fileReceiver != null) {
+            fileReceiver.openOutputStream();
+        }
+    }
+
+    @Override
+    protected void closeStream() {
+        if(fileReceiver != null) {
+            fileReceiver.closeOutputStream();
+        }
     }
 }

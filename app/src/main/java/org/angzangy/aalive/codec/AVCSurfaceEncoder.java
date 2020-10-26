@@ -9,8 +9,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.view.Surface;
 
-import org.angzangy.aalive.Buffer;
-import org.angzangy.aalive.DataReceiver;
 import org.angzangy.aalive.LogPrinter;
 
 import java.io.IOException;
@@ -33,10 +31,10 @@ public class AVCSurfaceEncoder{
     private MediaCodec.BufferInfo bufferInfo;
     private ByteBuffer configBuffer;
     private long startTime;
-    private DataReceiver dataReveiver;
+    private FrameReceiver frameReceiver;
 
-    public AVCSurfaceEncoder(int width, int height, int bitRate, DataReceiver receiver) throws IOException{
-        dataReveiver = receiver;
+    public AVCSurfaceEncoder(int width, int height, int bitRate, FrameReceiver receiver) throws IOException{
+        frameReceiver = receiver;
         MediaFormat mediaFormat = MediaFormat.createVideoFormat(MIME_TYPE, width, height);
         mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
         mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
@@ -130,31 +128,8 @@ public class AVCSurfaceEncoder{
                 if(startTime == 0){
                     startTime = bufferInfo.presentationTimeUs / 1000;
                 }
-                encodedData.position(bufferInfo.offset);
-                encodedData.limit(bufferInfo.offset + bufferInfo.size);
-                if((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
-                    configBuffer = ByteBuffer.allocateDirect(bufferInfo.size);
-                    configBuffer.put(encodedData);
-                } else {
-                    byte [] encodeBuf = null;
-                    int offset = 0;
-                    Buffer buffer = new Buffer();
-                    if((bufferInfo.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0) {
-                        // For H.264 key frame prepend SPS and PPS NALs at the start.
-                        configBuffer.rewind();
-                        encodeBuf = new byte [bufferInfo.size + configBuffer.capacity()];
-                        configBuffer.get(encodeBuf, 0, configBuffer.capacity());
-                        offset = configBuffer.capacity();
-                    } else {
-                        encodeBuf = new byte [bufferInfo.size];
-                    }
-                    encodedData.get(encodeBuf, offset, bufferInfo.size);
-                    buffer.buf = encodeBuf;
-                    buffer.offsetInBytes = 0;
-                    buffer.sizeInBytes = encodeBuf.length;
-                    if(dataReveiver != null) {
-                        dataReveiver.receive(buffer);
-                    }
+                if(frameReceiver != null) {
+                    frameReceiver.receive(encodedData, bufferInfo);
                 }
                 mediaCodec.releaseOutputBuffer(encoderStatus, false);
             }
