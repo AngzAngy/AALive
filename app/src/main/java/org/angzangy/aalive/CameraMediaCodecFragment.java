@@ -42,7 +42,6 @@ public class CameraMediaCodecFragment extends BaseFragment implements SurfaceTex
             public void onClick(View v) {
                 if(avcSenderController != null){
                     avcSenderController.openStream();
-                    avcSenderController.setRecordingEnabled(true);
                 }
             }
         });
@@ -105,8 +104,9 @@ public class CameraMediaCodecFragment extends BaseFragment implements SurfaceTex
     }
 
     public void createController() {
-        File file = new File(getActivity().getExternalCacheDir(), "aalive.h264");
-        avcSenderController = new AVCDumpFileController(file);
+//        File file = new File(getActivity().getExternalCacheDir(), "aalive.flv");
+//        avcSenderController = new AVCDumpFileController(file);
+        avcSenderController = new AVCRtmpController("rtmp://172.17.71.63:1935/myapp/aalive");
     }
 
     @Override
@@ -173,7 +173,7 @@ public class CameraMediaCodecFragment extends BaseFragment implements SurfaceTex
     @Override
     public void OnCameraPreviewSize(int width, int height) {
         if(avcSenderController != null) {
-            avcSenderController.startVideoEncoder(width, height);
+            avcSenderController.setVideoSize(width, height);
             avcSenderController.sendFrameAvailableMsg();
         }
     }

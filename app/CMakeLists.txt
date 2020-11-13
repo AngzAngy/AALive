@@ -5,7 +5,7 @@
 cmake_minimum_required(VERSION 3.4.1)
 
 ADD_DEFINITIONS(
--g -W -O3 -D__STDC_CONSTANT_MACROS -D_ANDROID_
+-g -W -O3 -D__STDC_CONSTANT_MACROS -D_ANDROID_ -DNO_CRYPTO
 )
 
 add_library(yuv_static STATIC IMPORTED)
@@ -60,6 +60,8 @@ set_target_properties(
     ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/lib/${ANDROID_ABI}/libavformat.a)
 
 include_directories( # Specifies a path to header files
+                     ${CMAKE_SOURCE_DIR}/src/main/jni/rtmp
+                     ${CMAKE_SOURCE_DIR}/src/main/jni/rtmp/librtmp
                      ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/include
                      ${CMAKE_SOURCE_DIR}/src/main/jni/libyuv/include
                      ${CMAKE_SOURCE_DIR}/src/main/jni/gpu
@@ -79,6 +81,12 @@ add_library( # Sets the name of the library.
              # Provides a relative path to your source file(s).
              # Associated headers in the same location as their source
              # file are automatically included.
+             src/main/jni/rtmp/librtmp/amf.c
+             src/main/jni/rtmp/librtmp/hashswf.c
+             src/main/jni/rtmp/librtmp/log.c
+             src/main/jni/rtmp/librtmp/parseurl.c
+             src/main/jni/rtmp/librtmp/rtmp.c
+             src/main/jni/rtmp/flvmuxer/xiecc_rtmp.c
              src/main/jni/gpu/GLUtil.cpp
              src/main/jni/gpu/Framebuffer.cpp
              src/main/jni/gpu/ProgramShaderUtil.cpp
@@ -87,12 +95,15 @@ add_library( # Sets the name of the library.
              src/main/jni/gpu/YuvConverter.cpp
              src/main/jni/CommonGlobaldef.cpp
              src/main/jni/Thread.cpp
+             src/main/jni/FFRtmpMuxer.cpp
+             src/main/jni/RtmpMuxer.cpp
              src/main/jni/H264Encoder.cpp
              src/main/jni/AACEncoder.cpp
              src/main/jni/LiveMuxerInfo.cpp
              src/main/jni/LiveMuxer.cpp
              src/main/jni/AudioRecord.cpp
              src/main/jni/org_angzangy_aalive_LiveTelecastNative.cpp
+             src/main/jni/org_angzangy_aalive_muxer_RtmpMuxer.cpp
 )
 
 # Searches for a specified prebuilt library and stores the path as a

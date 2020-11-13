@@ -27,25 +27,42 @@ public class AVCSenderController extends GLESEnvController implements OnEGLConte
         this.frameReceiver = frameReceiver;
     }
 
-    public void setRecordingEnabled(boolean b) {
-        recordingEnabled = b;
-    }
-
-    public void startVideoEncoder(int videoWidth, int videoHeight){
+    public void asyncStartEncoder() {
         if(recordingEnabled){
             return;
         }
-        this.videoWidth = videoWidth;
-        this.videoHeight = videoHeight;
         final int BIT_RATE = 4000000;   // 4Mbps
         try {
-            avcEncoder = new AVCSurfaceEncoder(videoWidth, videoHeight, BIT_RATE, frameReceiver);
-            sendCreateEGLSurface(avcEncoder.getInputSurface());
+            if(avcEncoder == null) {
+                avcEncoder = new AVCSurfaceEncoder(videoWidth, videoHeight, BIT_RATE, frameReceiver);
+                sendCreateEGLSurface(avcEncoder.getInputSurface());
+            }
             avcEncoder.asyncStart();
             recordingEnabled = true;
         }catch (IOException e){
             e.printStackTrace();
         }
+    }
+
+    public void asyncStopEncoder(){
+        recordingEnabled = false;
+       if(avcEncoder != null) {
+           avcEncoder.asyncStop();
+       }
+    }
+
+    public void asyncReleaseEncoder(){
+        if(avcEncoder != null) {
+            if(recordingEnabled) {
+                asyncStopEncoder();
+            }
+            avcEncoder.asyncRelease();
+        }
+    }
+
+    public void setVideoSize(int videoWidth, int videoHeight){
+        this.videoWidth = videoWidth;
+        this.videoHeight = videoHeight;
     }
 
     @Override
@@ -100,6 +117,9 @@ public class AVCSenderController extends GLESEnvController implements OnEGLConte
         return frameIndex * ONE_BILLION / frameRate;
     }
 
-    protected void openStream(){}
-    protected void closeStream(){}
+    protected void openStream(){
+    }
+
+    protected void closeStream(){
+    }
 }
