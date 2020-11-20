@@ -29,7 +29,6 @@ public class AVCSurfaceEncoder{
     private MediaCodec mediaCodec;
     private Surface inputSurface;
     private MediaCodec.BufferInfo bufferInfo;
-    private ByteBuffer configBuffer;
     private long startTime;
     private FrameReceiver frameReceiver;
 

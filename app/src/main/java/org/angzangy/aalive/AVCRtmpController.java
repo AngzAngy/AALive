@@ -111,9 +111,7 @@ public class AVCRtmpController extends AVCSenderController implements FrameRecei
 //        }
 //        index ++;
         if(isConnected()) {
-            byte [] buf = new byte[bufferInfo.size];
-            buffer.get(buf);
-            rtmpMuxer.writeVideo(buf, 0, bufferInfo.size, timeIndexCounter.getTimeIndex());
+            rtmpMuxer.writeVideo(buffer, 0, bufferInfo.size, timeIndexCounter.getTimeIndex());
         }
     }
 

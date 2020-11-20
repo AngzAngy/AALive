@@ -9,6 +9,7 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 
+import org.angzangy.aalive.GlUtil;
 import org.angzangy.aalive.ImageSizeSurfaceTextureRenderer;
 import org.angzangy.aalive.LogPrinter;
 import org.angzangy.aalive.gles.OnTextureFboStateChangeListener;
@@ -33,8 +34,8 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
     private OnTextureFboStateChangeListener mOnTextureFboStateChangeListener;
     private ImageSizeSurfaceTextureRenderer mSurfaceRenderer;
     protected float[] mFboMVPMatrix = new float[16];
-    private float [] mScreenMVPMatrix = new float[16];//render to screen model-view-project matrix
-    private float[] mSTMatrix = new float[16];//texture transport matrix
+//    private float [] mScreenMVPMatrix = new float[16];//render to screen model-view-project matrix
+//    private float[] mSTMatrix = new float[16];//texture transport matrix
     private TextureFbo mTextureFbo;
     private Texture2DRenderer mTexture2DRender;
 
@@ -53,10 +54,10 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
         if(mSurfaceRenderer != null){
             GLES20.glViewport(0, 0, mTextureFbo.getWidth(), mTextureFbo.getHeight());
             mTextureFbo.bindFbo(GLES20.GL_TEXTURE1);
-            mSurfaceRenderer.renderTexture2D(mSurfaceTextId, mFboMVPMatrix, mSTMatrix);
+            mSurfaceRenderer.renderTexture2D(mSurfaceTextId, mFboMVPMatrix, GlUtil.IDENTITY_MATRIX);
             mTextureFbo.unBindFbo(GLES20.GL_TEXTURE1);
 
-            mTexture2DRender.renderTexture2D(mTextureFbo.getTextureId(), mScreenMVPMatrix, mSTMatrix);
+            mTexture2DRender.renderTexture2D(mTextureFbo.getTextureId(), GlUtil.IDENTITY_MATRIX, GlUtil.IDENTITY_MATRIX);
 
             if(mOnTextureFboStateChangeListener != null) {
                 mOnTextureFboStateChangeListener.onTextureFboUpdated(mTextureFbo);
@@ -127,11 +128,10 @@ public class CameraPreviewGLRender implements GLSurfaceView.Renderer,
                 GLES20.GL_CLAMP_TO_EDGE);
 
         Matrix.setIdentityM(mFboMVPMatrix, 0);
-        Matrix.rotateM(mFboMVPMatrix, 0, 270, 0, 0, 1);
-        Matrix.scaleM(mFboMVPMatrix, 0, 1, -1, 1);
-        Matrix.setIdentityM(mScreenMVPMatrix, 0);
-        Matrix.rotateM(mScreenMVPMatrix, 0, 180, 0, 0, 1);
-        Matrix.setIdentityM(mSTMatrix, 0);
+        Matrix.rotateM(mFboMVPMatrix, 0, 90, 0, 0, 1);
+//        Matrix.scaleM(mFboMVPMatrix, 0, 1, -1, 1);
+//        Matrix.setIdentityM(mScreenMVPMatrix, 0);
+//        Matrix.setIdentityM(mSTMatrix, 0);
         if(mSurfaceRenderer == null){
             mSurfaceRenderer = new ImageSizeSurfaceTextureRenderer();
         }
