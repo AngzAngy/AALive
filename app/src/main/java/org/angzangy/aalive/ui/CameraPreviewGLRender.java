@@ -9,7 +9,7 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 
-import org.angzangy.aalive.GlUtil;
+import org.angzangy.aalive.gles.GlUtil;
 import org.angzangy.aalive.ImageSizeSurfaceTextureRenderer;
 import org.angzangy.aalive.LogPrinter;
 import org.angzangy.aalive.gles.OnTextureFboStateChangeListener;

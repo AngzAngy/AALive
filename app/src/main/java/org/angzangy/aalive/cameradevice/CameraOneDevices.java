@@ -1,4 +1,4 @@
-package org.angzangy.aalive;
+package org.angzangy.aalive.cameradevice;
 
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
@@ -7,6 +7,8 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
+
+import org.angzangy.aalive.OnCameraPreviewSizeChangeListener;
 
 import java.io.IOException;
 import java.util.ArrayList;

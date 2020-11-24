@@ -11,14 +11,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import org.angzangy.aalive.cameradevice.Camera2Devices;
+import org.angzangy.aalive.cameradevice.ICameraDevices;
 import org.angzangy.aalive.gles.EGLContextWrapper;
 import org.angzangy.aalive.gles.OnEGLContextStateChangeListener;
 import org.angzangy.aalive.gles.OnTextureFboStateChangeListener;
 import org.angzangy.aalive.gles.SurfaceTextureStateChangedListener;
 import org.angzangy.aalive.gles.TextureFbo;
 import org.angzangy.aalive.ui.CameraPreviewGLView;
-
-import java.io.File;
 
 public class CameraMediaCodecFragment extends BaseFragment implements SurfaceTextureStateChangedListener,
         OnCameraPreviewSizeChangeListener{

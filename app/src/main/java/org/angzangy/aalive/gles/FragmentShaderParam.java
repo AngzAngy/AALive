@@ -1,4 +1,4 @@
-package org.angzangy.aalive;
+package org.angzangy.aalive.gles;
 
 import android.opengl.GLES20;
 

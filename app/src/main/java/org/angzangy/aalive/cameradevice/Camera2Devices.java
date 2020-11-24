@@ -1,4 +1,4 @@
-package org.angzangy.aalive;
+package org.angzangy.aalive.cameradevice;
 
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
@@ -17,6 +17,8 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Size;
 import android.view.Surface;
+
+import org.angzangy.aalive.OnCameraPreviewSizeChangeListener;
 
 import java.util.Arrays;
 

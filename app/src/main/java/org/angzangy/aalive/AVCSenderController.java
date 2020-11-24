@@ -7,6 +7,7 @@ import org.angzangy.aalive.codec.AVCSurfaceEncoder;
 import org.angzangy.aalive.codec.FrameReceiver;
 import org.angzangy.aalive.gles.EGLContextWrapper;
 import org.angzangy.aalive.gles.GLESEnvController;
+import org.angzangy.aalive.gles.GlUtil;
 import org.angzangy.aalive.gles.OnEGLContextStateChangeListener;
 
 import java.io.IOException;

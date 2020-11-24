@@ -4,6 +4,7 @@ import android.opengl.EGLContext;
 
 import org.angzangy.aalive.gles.EGLContextWrapper;
 import org.angzangy.aalive.gles.GLESEnvController;
+import org.angzangy.aalive.gles.GlUtil;
 import org.angzangy.aalive.gles.OnEGLContextStateChangeListener;
 import org.angzangy.aalive.gles.OnTextureFboStateChangeListener;
 import org.angzangy.aalive.gles.TextureFbo;

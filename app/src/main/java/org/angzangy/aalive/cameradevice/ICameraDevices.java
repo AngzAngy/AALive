@@ -1,6 +1,8 @@
-package org.angzangy.aalive;
+package org.angzangy.aalive.cameradevice;
 
 import android.graphics.SurfaceTexture;
+
+import org.angzangy.aalive.OnCameraPreviewSizeChangeListener;
 
 /**
  * Created on 2017/1/24.

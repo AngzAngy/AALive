@@ -8,7 +8,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.view.Surface;
 
-import org.angzangy.aalive.GlUtil;
 import org.angzangy.aalive.LogPrinter;
 
 public class GLESEnvController{

@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class AVCSurfaceEncoder{
-    private static final String MIME_TYPE = "video/avc";    // H.264 Advanced Video Coding
     private static final int FRAME_RATE = 30;
     private static final int IFRAME_INTERVAL = 5;           // 5 seconds between I-frames
 
@@ -34,13 +33,13 @@ public class AVCSurfaceEncoder{
 
     public AVCSurfaceEncoder(int width, int height, int bitRate, FrameReceiver receiver) throws IOException{
         frameReceiver = receiver;
-        MediaFormat mediaFormat = MediaFormat.createVideoFormat(MIME_TYPE, width, height);
+        MediaFormat mediaFormat = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, width, height);
         mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
         mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
         mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, getFrameRate());
         mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, IFRAME_INTERVAL);
 
-        mediaCodec = MediaCodec.createEncoderByType(MIME_TYPE);
+        mediaCodec = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_VIDEO_AVC);
         mediaCodec.configure(mediaFormat, null, null,
                 MediaCodec.CONFIGURE_FLAG_ENCODE);
 

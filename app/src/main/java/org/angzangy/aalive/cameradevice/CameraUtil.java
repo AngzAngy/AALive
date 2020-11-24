@@ -1,4 +1,4 @@
-package org.angzangy.aalive;
+package org.angzangy.aalive.cameradevice;
 
 import java.util.Arrays;
 import java.util.Collections;

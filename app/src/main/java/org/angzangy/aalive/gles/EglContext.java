@@ -10,8 +10,6 @@ import android.opengl.EGLSurface;
 import android.util.Log;
 import android.view.Surface;
 
-import org.angzangy.aalive.GlUtil;
-
 /**
  * Core EGL state (display, context, config).
  * <p>

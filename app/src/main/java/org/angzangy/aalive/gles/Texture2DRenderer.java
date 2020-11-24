@@ -3,8 +3,6 @@ package org.angzangy.aalive.gles;
 import java.nio.FloatBuffer;
 import android.opengl.GLES20;
 
-import org.angzangy.aalive.NioBufferUtil;
-
 public class Texture2DRenderer {
     protected static final int FLOAT_SIZE_BYTES = 4;
     protected static final int VERTICES_DATA_STRIDE_BYTES = 5 * FLOAT_SIZE_BYTES;
