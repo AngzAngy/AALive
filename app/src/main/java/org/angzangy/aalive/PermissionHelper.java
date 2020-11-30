@@ -30,7 +30,8 @@ class PermissionHelper {
     boolean showRationale = ActivityCompat.shouldShowRequestPermissionRationale(activity,
               Manifest.permission.CAMERA) || (requestWritePermission &&
     ActivityCompat.shouldShowRequestPermissionRationale(activity,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE));
+            Manifest.permission.WRITE_EXTERNAL_STORAGE)) ||
+            (ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.RECORD_AUDIO));
     if (showRationale) {
         Toast.makeText(activity,
                 "Camera permission is needed to run this application", Toast.LENGTH_LONG).show();
@@ -39,7 +40,7 @@ class PermissionHelper {
         // No explanation needed, we can request the permission.
 
       String permissions[] = requestWritePermission ? new String[]{Manifest.permission.CAMERA,
-              Manifest.permission.WRITE_EXTERNAL_STORAGE}: new String[]{Manifest.permission.CAMERA};
+              Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.RECORD_AUDIO}: new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO};
         ActivityCompat.requestPermissions(activity,permissions,RC_PERMISSION_REQUEST);
       }
     }
