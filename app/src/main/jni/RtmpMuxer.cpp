@@ -22,9 +22,10 @@ bool RtmpMuxer::open(const LiveMuxerInfo& muxerInfo) {
         LOGD("%s err handler null url:%s",__FUNCTION__, muxerInfo.muxerUri.c_str());
         return false;
     }
-    if(0 != rtmp_sender_start_publish(mRtmpHandler, 0, 0)) {
-        LOGD("%s err url:%s",__FUNCTION__, muxerInfo.muxerUri.c_str());
-        return false;
+    int ret = rtmp_sender_start_publish(mRtmpHandler, RTMP_STREAM_PROPERTY_PUBLIC, 0);
+    if(0 != ret) {
+        LOGD("%s err(%d) url:%s",__FUNCTION__, ret, muxerInfo.muxerUri.c_str());
+//        return false;
     }
     LOGD("%s success url:%s",__FUNCTION__, muxerInfo.muxerUri.c_str());
     return true;

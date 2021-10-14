@@ -1,10 +1,9 @@
 #ifndef __A_BUF_H_
 #define __A_BUF_H_
-#include <stdlib.h>
-#include <stdint.h>
+
 class ABuffer{
 public:
-	ABuffer():buf(NULL), sizeInBytes(0)/*, timeStamp(0)*/{}
+	ABuffer():buf(nullptr), sizeInBytes(0)/*, timeStamp(0)*/{}
 	~ABuffer(){}
 	void *buf;
 	int sizeInBytes;

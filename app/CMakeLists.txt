@@ -60,8 +60,11 @@ set_target_properties(
     ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/lib/${ANDROID_ABI}/libavformat.a)
 
 include_directories( # Specifies a path to header files
+                     ${CMAKE_SOURCE_DIR}/src/main/jni
                      ${CMAKE_SOURCE_DIR}/src/main/jni/rtmp
                      ${CMAKE_SOURCE_DIR}/src/main/jni/rtmp/librtmp
+                     ${CMAKE_SOURCE_DIR}/src/main/jni/buffer
+                     ${CMAKE_SOURCE_DIR}/src/main/jni/codec
                      ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/include
                      ${CMAKE_SOURCE_DIR}/src/main/jni/libyuv/include
                      ${CMAKE_SOURCE_DIR}/src/main/jni/gpu
@@ -95,11 +98,12 @@ add_library( # Sets the name of the library.
              src/main/jni/gpu/YuvConverter.cpp
              src/main/jni/CommonGlobaldef.cpp
              src/main/jni/Thread.cpp
+             src/main/jni/codec/LiveMuxerInfo.cpp
+             src/main/jni/codec/MediaCodecAACEncoder.cpp
              src/main/jni/FFRtmpMuxer.cpp
              src/main/jni/RtmpMuxer.cpp
              src/main/jni/H264Encoder.cpp
              src/main/jni/AACEncoder.cpp
-             src/main/jni/LiveMuxerInfo.cpp
              src/main/jni/LiveMuxer.cpp
              src/main/jni/AudioRecord.cpp
              src/main/jni/org_angzangy_aalive_LiveTelecastNative.cpp
@@ -140,6 +144,12 @@ find_library( # Sets the name of the path variable.
               # you want CMake to locate.
               OpenSLES )
 
+find_library( # Sets the name of the path variable.
+              mediandk-lib
+
+             # Specifies the name of the NDK library that
+             # you want CMake to locate.
+             mediandk)
 # Specifies libraries CMake should link to your target library. You
 # can link multiple libraries, such as libraries you define in the
 # build script, prebuilt third-party libraries, or system libraries.
@@ -153,6 +163,7 @@ target_link_libraries( # Specifies the target library.
                        ${zip-lib}
                        ${GLESv2-lib}
                        ${OpenSLES-lib}
+                       ${mediandk-lib}
                        yuv_static
                        "-Wl,--whole-archive" # This is important,because those libraries depend each other
                        x264
