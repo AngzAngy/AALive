@@ -3,7 +3,7 @@ package org.angzangy.aalive;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 public class WelcomeActivity extends BaseActivity {
     private static int MIN_STAY_MS = 1000;
@@ -19,7 +19,8 @@ public class WelcomeActivity extends BaseActivity {
     protected void onStart() {
         super.onStart();
         hasInitPermission = PermissionHelper.hasCameraPermission(this)
-                && PermissionHelper.hasWriteStoragePermission(this);
+                && PermissionHelper.hasWriteStoragePermission(this)
+                && PermissionHelper.hasRecordAudioPermission(this);
         if(hasInitPermission){
             handler.postDelayed(scenceRunnable, MIN_STAY_MS);
         } else {
@@ -36,6 +37,8 @@ public class WelcomeActivity extends BaseActivity {
         if(!hasInitPermission){
             PermissionHelper.launchPermissionSettings(this);
             finish();
+        } else {
+            jumpMain();
         }
     }
 

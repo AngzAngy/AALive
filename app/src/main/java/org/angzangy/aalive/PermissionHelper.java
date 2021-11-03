@@ -7,8 +7,9 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.provider.Settings;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
 import android.widget.Toast;
 
 /**
@@ -24,6 +25,10 @@ class PermissionHelper {
   public static boolean hasWriteStoragePermission(Activity activity) {
     return ContextCompat.checkSelfPermission(activity,
             Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+  }
+  public static boolean hasRecordAudioPermission(Activity activity) {
+    return ContextCompat.checkSelfPermission(activity,
+            Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
   }
   public static void requestCameraPermission(Activity activity, boolean requestWritePermission) {
 
@@ -45,7 +50,7 @@ class PermissionHelper {
       }
     }
 
-  public static void requestCameraPermission(android.support.v4.app.Fragment fragment) {
+  public static void requestCameraPermission(Fragment fragment) {
     boolean showRationale = ActivityCompat.shouldShowRequestPermissionRationale(fragment.getActivity(),
             Manifest.permission.CAMERA);
     if (showRationale) {
