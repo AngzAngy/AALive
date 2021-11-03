@@ -902,8 +902,6 @@ finish:
   return ret;
 }
 
-#include "../../AALog.h"
-
 RTMPResult
 RTMP_Connect0(RTMP *r, struct sockaddr * service)
 {
@@ -929,8 +927,6 @@ RTMP_Connect0(RTMP *r, struct sockaddr * service)
       if (connect(r->m_sb.sb_socket, service, sizeof(struct sockaddr)) < 0)
 	{
 	  int err = GetSockError();
-        LOGE("%s, failed to connect socket. %d (%s)",
-             __FUNCTION__, err, strerror(err));
 	  RTMP_Log(RTMP_LOGERROR, "%s, failed to connect socket. %d (%s)",
 	      __FUNCTION__, err, strerror(err));
 	  RTMP_Close(r);
