@@ -20,6 +20,7 @@ public:
     bool receiveBuffer(ABufferCallback<ATimestampBuffer> *callback);
 
 private:
+    LiveMuxerInfo muxerParam;
     AMediaCodec* pMediaCodec;
 };
 #endif //AALIVE_MEDIACODECAACENCODER_H

@@ -12,6 +12,19 @@ class ATimestampBuffer : public ABuffer{
 public:
     ATimestampBuffer():timestamp(0){
     }
-    int64_t timestamp;
+    ATimestampBuffer(int sizeBytes):timestamp(0){
+        buf = new uint8_t[sizeBytes];
+        if(buf) {
+            sizeInBytes = sizeBytes;
+        }
+    }
+    ~ATimestampBuffer(){
+        if(buf) {
+            delete []buf;
+            buf = nullptr;
+            sizeInBytes = 0;
+        }
+    }
+    uint64_t timestamp;
 };
 #endif //AALIVE_ATIMESTAMPBUFFER_H

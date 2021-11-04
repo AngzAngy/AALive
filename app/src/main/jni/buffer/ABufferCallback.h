@@ -8,6 +8,6 @@
 template <class Buffer>
 class ABufferCallback{
 public:
-    virtual void callback(Buffer buffer) = 0;
+    virtual void callback(Buffer* buffer) = 0;
 };
 #endif //AALIVE_ABUFFERCALLBACK_H

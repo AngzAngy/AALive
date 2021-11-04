@@ -9,7 +9,7 @@
 #define TRUE 1
 #define FALSE 0
 
-int64_t currentUsec();
+uint64_t currentUsec();
 
 enum SampleFormat {
 	SAMPLE_FMT_NONE = -1,

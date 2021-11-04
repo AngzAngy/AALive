@@ -10,8 +10,13 @@
 #include "AudioRecord.h"
 #include "CommonGlobaldef.h"
 #include "Thread.h"
+#include "TimeIndexCounter.h"
 #include "codec/LiveMuxerInfo.h"
+#include "buffer/ATimestampBuffer.h"
 #include <cstdint>
+#include <fstream>
+
+//#define DUMP_ADTS 1
 
 #define P_MUXER(jptr) RtmpContext * pMuxer = (RtmpContext*)jptr
 
@@ -23,11 +28,15 @@ public:
     ~RtmpContext();
     bool open(LiveMuxerInfo &muxerInfo);
     MedaiCodecAACEncoder aacEncoder;
+    TimeIndexCounter aacDtsCounter;
     Thread aacEncoderThread;
     AudioRecord *audioRecord;
     RtmpMuxer rtmpMuxer;
+#ifdef DUMP_ADTS
+    std::fstream ofs;
+#endif
 
-    void callback(ATimestampBuffer buffer);
+    void callback(ATimestampBuffer* buffer);
 };
 
 void RtmpContext::onPCMCallback(void *buf, int32_t size, void* userData) {
@@ -50,7 +59,9 @@ void RtmpContext::aacEncoderThreadCb(void *userData) {
 }
 
 RtmpContext::RtmpContext():audioRecord(nullptr){
-
+#ifdef DUMP_ADTS
+    ofs.open("/sdcard/DCIM/dump.aac", std::ios::out | std::ios::binary);
+#endif
 }
 
 bool RtmpContext::open(LiveMuxerInfo &muxerInfo) {
@@ -85,13 +96,20 @@ RtmpContext::~RtmpContext() {
     rtmpMuxer.release();
 }
 
-void RtmpContext::callback(ATimestampBuffer buffer) {
-    if(rtmpMuxer.isConnected()) {
-        const uint8_t *buf = (const uint8_t *)(buffer.buf);
-        const int bufBytes = buffer.sizeInBytes;
-         uint64_t dtsUS = buffer.timestamp;
+void RtmpContext::callback(ATimestampBuffer* buffer) {
+    if(buffer && buffer->sizeInBytes > 0 && buffer->buf) {
+        uint8_t *buf = (uint8_t *)(buffer->buf);
+        int bufBytes = buffer->sizeInBytes;
+        uint64_t dtsUS = buffer->timestamp;
+        aacDtsCounter.calcTotalTime(buffer->timestamp);
+        dtsUS = aacDtsCounter.getTimeIndex();
+#ifdef DUMP_ADTS
+        ofs.write((char*)buf, buffer->sizeInBytes);
+#endif
+
         bool ret = rtmpMuxer.writeAudioFrame(buf, bufBytes, dtsUS);
-        LOGD("%s : rtmpMuxerWriteAudio result: %d,timestamp: %ld", __FUNCTION__, ret, dtsUS);
+        LOGD("callback rtmpMuxerWriteAudio dts: %lld", dtsUS);
+//        LOGD("callback rtmpMuxerWriteAudio buf0: %02X, buf1: %02X", buf[0], buf[1]);
     }
 };
 
@@ -346,6 +364,9 @@ JNIEXPORT jint JNICALL Java_org_angzangy_aalive_muxer_RtmpMuxer_close
   (JNIEnv *jniEnv, jobject jobj, jlong jptr) {
   P_MUXER(jptr);
   if(pMuxer) {
+#ifdef DUMP_ADTS
+      pMuxer->ofs.close();
+#endif
     return pMuxer->rtmpMuxer.close() ? 1 : 0;
   }
   if(!pMuxer) {
