@@ -4,15 +4,13 @@
 #include "JNIUtils.h"
 #include "FFRtmpMuxer.h"
 #include "RtmpMuxer.h"
-#include "ABufferCallback.h"
-#include "ATimestampBuffer.h"
-#include "MediaCodecAACEncoder.h"
+#include "buffer/ATimestampBuffer.h"
+#include "buffer/ABufferCallback.h"
+#include "codec/LiveMuxerInfo.h"
+#include "codec/MediaCodecAACEncoder.h"
 #include "AudioRecord.h"
 #include "CommonGlobaldef.h"
-#include "Thread.h"
 #include "TimeIndexCounter.h"
-#include "codec/LiveMuxerInfo.h"
-#include "buffer/ATimestampBuffer.h"
 #include <cstdint>
 #include <fstream>
 
@@ -20,13 +18,14 @@
 
 #define P_MUXER(jptr) RtmpContext * pMuxer = (RtmpContext*)jptr
 
-class RtmpContext : public ABufferCallback<ATimestampBuffer> {
+class RtmpContext{
 public:
     static void onPCMCallback(void *buf, int32_t size, void* userData);
-    static void aacEncoderThreadCb(void * userData);
     RtmpContext();
     ~RtmpContext();
     bool open(LiveMuxerInfo &muxerInfo);
+    bool receiveEncoderBuffer(void *buf, int sizeBytes, uint64_t timestamp, FrameType type);
+    void receiveAdtsFrame();
     MedaiCodecAACEncoder aacEncoder;
     TimeIndexCounter aacDtsCounter;
     Thread aacEncoderThread;
@@ -35,26 +34,19 @@ public:
 #ifdef DUMP_ADTS
     std::fstream ofs;
 #endif
-
-    void callback(ATimestampBuffer* buffer);
 };
 
 void RtmpContext::onPCMCallback(void *buf, int32_t size, void* userData) {
     LOGD("%s : audio record", __FUNCTION__);
-    MedaiCodecAACEncoder *aacEncoder = (MedaiCodecAACEncoder*)userData;
-    static ATimestampBuffer buffer;
-    if(aacEncoder) {
+    RtmpContext *pContext = (RtmpContext *)userData;
+    if(pContext) {
+        ATimestampBuffer buffer;
         buffer.timestamp = currentUsec();
         buffer.sizeInBytes = size;
         buffer.buf = buf;
-        aacEncoder->sendBuffer(buffer);
-    }
-}
+        pContext->aacEncoder.sendBuffer(buffer);
 
-void RtmpContext::aacEncoderThreadCb(void *userData) {
-    RtmpContext *rtmpContext = (RtmpContext*)userData;
-    if(rtmpContext) {
-        rtmpContext->aacEncoder.receiveBuffer(rtmpContext);
+        pContext->receiveAdtsFrame();
     }
 }
 
@@ -73,13 +65,9 @@ bool RtmpContext::open(LiveMuxerInfo &muxerInfo) {
         audioRecord = new AudioRecord(muxerInfo.audioSampleRate, muxerInfo.audioBytesPerSample,
                                       muxerInfo.audioChannelNumber, 1024);
 
-        audioRecord->setOnFrameCallback(RtmpContext::onPCMCallback, &aacEncoder);
+        audioRecord->setOnFrameCallback(RtmpContext::onPCMCallback, this);
         audioRecord->start();
 
-        ThreadCB cb;
-        cb.callback = RtmpContext::aacEncoderThreadCb;
-        cb.opaque = this;
-        aacEncoderThread.start(cb);
         return true;
     }
     return false;
@@ -96,22 +84,52 @@ RtmpContext::~RtmpContext() {
     rtmpMuxer.release();
 }
 
-void RtmpContext::callback(ATimestampBuffer* buffer) {
-    if(buffer && buffer->sizeInBytes > 0 && buffer->buf) {
-        uint8_t *buf = (uint8_t *)(buffer->buf);
-        int bufBytes = buffer->sizeInBytes;
-        uint64_t dtsUS = buffer->timestamp;
-        aacDtsCounter.calcTotalTime(buffer->timestamp);
-        dtsUS = aacDtsCounter.getTimeIndex();
+void RtmpContext::receiveAdtsFrame() {
+  AFrame *pFrame = rtmpMuxer.obtionFrame();
+  LOGE("mybug receiveAdtsFrame Frame: %p", pFrame);
+  if(pFrame) {
+    pFrame->type = AudioFrame;
+
+    pFrame->bufferAlloc = &gDefABufferAlloc;
+
+    aacEncoder.receiveBuffer(*pFrame);
+
+    LOGE("mybug receiveAdtsFrame 0");
+    if (pFrame->sizeInBytes > 0 && pFrame->buf) {
+        aacDtsCounter.calcTotalTime(pFrame->timestamp);
+        pFrame->timestamp = aacDtsCounter.getTimeIndex();
 #ifdef DUMP_ADTS
-        ofs.write((char*)buf, buffer->sizeInBytes);
+      ofs.write((char*)(pFrame->buf), pFrame->sizeInBytes);
 #endif
 
-        bool ret = rtmpMuxer.writeAudioFrame(buf, bufBytes, dtsUS);
-        LOGD("callback rtmpMuxerWriteAudio dts: %lld", dtsUS);
+        bool ret = rtmpMuxer.writeFrame(pFrame);
+//        LOGD("callback rtmpMuxerWriteAudio dts: %lld", dtsUS);
 //        LOGD("callback rtmpMuxerWriteAudio buf0: %02X, buf1: %02X", buf[0], buf[1]);
     }
-};
+  }
+}
+
+bool RtmpContext::receiveEncoderBuffer(void *buf, int sizeBytes, uint64_t timestamp, FrameType type) {
+    AFrame *pF = rtmpMuxer.obtionFrame();
+  LOGE("mybug receiveEncoderBuffer Frame: %p", pF);
+    if(pF) {
+      pF->type = type;
+      pF->timestamp = timestamp;
+      pF->bufferAlloc = &gDefABufferAlloc;
+
+      if(pF->capacityInBytes < sizeBytes || !pF->buf) {
+          pF->free();
+          pF->alloc(sizeBytes);
+      }
+      if(pF->buf) {
+        LOGE("mybug receiveEncoderBuffer 0");
+          pF->sizeInBytes = sizeBytes;
+          memcpy((pF->buf), buf, sizeBytes);
+          return rtmpMuxer.writeFrame(pF);
+      }
+    }
+    return false;
+}
 
 static jmethodID gArrayID = 0;
 static AA::Mutex gMutex;
@@ -155,7 +173,7 @@ JNIEXPORT jint JNICALL Java_org_angzangy_aalive_muxer_RtmpMuxer_open
     LiveMuxerInfo liveMuxerInfo;
     liveMuxerInfo.muxerUri = url;
     liveMuxerInfo.videoSrcWidth = liveMuxerInfo.videoDstWidth = jvWidth;
-    liveMuxerInfo.videoSrcHeight = liveMuxerInfo.videoDstWidth = jvHeight;
+    liveMuxerInfo.videoSrcHeight = liveMuxerInfo.videoDstHeight = jvHeight;
     liveMuxerInfo.audioSampleRate = 44100;
     liveMuxerInfo.audioChannelNumber = 1;
     liveMuxerInfo.audioBytesPerSample = 2;
@@ -189,7 +207,7 @@ JNIEXPORT jint JNICALL Java_org_angzangy_aalive_muxer_RtmpMuxer_writeVideo
   P_MUXER(jptr);
   if(pMuxer && jbuf) {
     jbyte * buf = jniEnv->GetByteArrayElements(jbuf, NULL);
-    bool ret = pMuxer->rtmpMuxer.writeVideoFrame((uint8_t *)(&buf[offset]), len, jtimestamp);
+    bool ret = pMuxer->receiveEncoderBuffer((void *)(&buf[offset]), len, jtimestamp, VideoFrame);
     jniEnv->ReleaseByteArrayElements(jbuf, buf, 0);
     return ret ? 1 : 0;
   }
@@ -242,7 +260,7 @@ JNIEXPORT jint JNICALL Java_org_angzangy_aalive_muxer_RtmpMuxer_writeNioVideo
       return 0;
     }
     uint8_t *buf = (uint8_t *)dst + joffset;
-    bool ret = pMuxer->rtmpMuxer.writeVideoFrame(buf, jsize, jtimestamp);
+    bool ret = pMuxer->receiveEncoderBuffer((void *)buf, jsize, jtimestamp, VideoFrame);
     if(NULL != jbyteArrObj) {
       jniEnv->ReleaseByteArrayElements(jbyteArrObj, (jbyte*)dst, 0);
     }
@@ -273,7 +291,7 @@ JNIEXPORT jint JNICALL Java_org_angzangy_aalive_muxer_RtmpMuxer_writeAudio
   P_MUXER(jptr);
   if(pMuxer && jbuf) {
     jbyte * buf = jniEnv->GetByteArrayElements(jbuf, NULL);
-    bool ret = pMuxer->rtmpMuxer.writeAudioFrame((uint8_t *)(&buf[offset]), len, jtimestamp);
+    bool ret = pMuxer->receiveEncoderBuffer((void *)(&buf[offset]), len, jtimestamp, AudioFrame);
     jniEnv->ReleaseByteArrayElements(jbuf, buf, 0);
     return ret ? 1 : 0;
   }
@@ -324,7 +342,7 @@ JNIEXPORT jint JNICALL Java_org_angzangy_aalive_muxer_RtmpMuxer_writeNioAudio
       return 0;
     }
     uint8_t *buf = (uint8_t *)dst + joffset;
-    bool ret = pMuxer->rtmpMuxer.writeAudioFrame(buf, size, jtimestamp);
+    bool ret = pMuxer->receiveEncoderBuffer((void *)buf, size, jtimestamp, AudioFrame);
     if(NULL != jbyteArrObj) {
       jniEnv->ReleaseByteArrayElements(jbyteArrObj, (jbyte*)dst, 0);
     }

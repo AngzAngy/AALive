@@ -163,6 +163,15 @@ void * rtmp_sender_alloc() {
     return (void *)rtmp_xiecc;
 }
 
+void rtmp_sender_free(void *handle) {
+    RTMP_XIECC *rtmp_xiecc = (RTMP_XIECC *)(handle);
+    if (rtmp_xiecc && rtmp_xiecc->rtmp) {
+        RTMP_Free(rtmp_xiecc->rtmp);
+        rtmp_xiecc->rtmp = NULL;
+        free(rtmp_xiecc);
+    }
+}
+
 int rtmp_open_for_write(void *handle, const char *url, uint32_t video_width, uint32_t video_height) {
     RTMP_XIECC *rtmp_xiecc = (RTMP_XIECC *)handle;
     RTMP *rtmp;
@@ -236,14 +245,10 @@ int rtmp_open_for_write(void *handle, const char *url, uint32_t video_width, uin
     return RTMP_ERROR_CONNECTION_LOST;
 }
 
-int rtmp_close(void ** handle) {
-    RTMP_XIECC *rtmp_xiecc = (RTMP_XIECC *)(*handle);
+int rtmp_close(void* handle) {
+    RTMP_XIECC *rtmp_xiecc = (RTMP_XIECC *)(handle);
     if (rtmp_xiecc && rtmp_xiecc->rtmp) {
         RTMP_Close(rtmp_xiecc->rtmp);
-        RTMP_Free(rtmp_xiecc->rtmp);
-        rtmp_xiecc->rtmp = NULL;
-        free(rtmp_xiecc);
-        *handle = NULL;
     }
 }
 

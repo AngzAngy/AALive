@@ -3,8 +3,6 @@
 //
 #include "MediaCodecAACEncoder.h"
 #include "LiveMuxerInfo.h"
-#include "ATimestampBuffer.h"
-#include "../libyuv/include/libyuv.h"
 #include "../AALog.h"
 #include <media/NdkMediaFormat.h>
 
@@ -155,8 +153,8 @@ bool MedaiCodecAACEncoder::sendBuffer(ATimestampBuffer &buffer) {
     return false;
 }
 
-bool MedaiCodecAACEncoder::receiveBuffer(ABufferCallback<ATimestampBuffer> *callbackPtr) {
-    if(nullptr != pMediaCodec && nullptr != callbackPtr) {
+bool MedaiCodecAACEncoder::receiveBuffer(ATimestampBuffer &buffer) {
+    if(nullptr != pMediaCodec) {
         AMediaCodecBufferInfo info;
         size_t out_size = 0;
         ssize_t idx= AMediaCodec_dequeueOutputBuffer(pMediaCodec, &info, 0);
@@ -165,23 +163,25 @@ bool MedaiCodecAACEncoder::receiveBuffer(ABufferCallback<ATimestampBuffer> *call
                 return false;
             }
             uint8_t *out_buf = AMediaCodec_getOutputBuffer(pMediaCodec, idx, &out_size);
-            ATimestampBuffer *aTimestampBuffer = new ATimestampBuffer(info.size + ADTS_HEADER_BYTES);
-            if(aTimestampBuffer && aTimestampBuffer->buf) {
-                aTimestampBuffer->timestamp = info.presentationTimeUs;
+            int adtsFrameBytes = info.size + ADTS_HEADER_BYTES;
+            if(buffer.capacityInBytes < adtsFrameBytes || !buffer.buf) {
+                buffer.free();
+                buffer.alloc(adtsFrameBytes);
+            }
+            if(buffer.buf) {
+                buffer.sizeInBytes = adtsFrameBytes;
+                buffer.timestamp = info.presentationTimeUs;
 
-                uint8_t *in_buf = (uint8_t*)(aTimestampBuffer->buf);
+                uint8_t *in_buf = (uint8_t*)(buffer.buf);
 
                 int adtsSamplerate = getADTSsamplerate(muxerParam.audioSampleRate);
-                addADtsHeader(in_buf, aTimestampBuffer->sizeInBytes, adtsSamplerate, muxerParam.audioChannelNumber);
+                addADtsHeader(in_buf, buffer.sizeInBytes, adtsSamplerate, muxerParam.audioChannelNumber);
 
 //                LOGE("recv audio size: %d,adts size: %d,smprate: %d, channel: %d",info.size, aTimestampBuffer->sizeInBytes, muxerParam.audioSampleRate, muxerParam.audioChannelNumber);
 
                 memcpy(in_buf + ADTS_HEADER_BYTES, out_buf + info.offset, info.size);
 
 //                LOGE("rtmpMuxerWriteAudio codec buf0: %02X, buf1: %02X", in_buf[0], in_buf[1]);
-                callbackPtr->callback(aTimestampBuffer);
-
-                delete aTimestampBuffer;
             }
             media_status_t ret = AMediaCodec_releaseOutputBuffer(pMediaCodec, idx, false);
             return (AMEDIA_OK == ret);

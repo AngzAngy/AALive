@@ -17,9 +17,11 @@ extern "C"{
 
 void * rtmp_sender_alloc();
 
+void rtmp_sender_free(void *handle);
+
 int rtmp_open_for_write(void *handle, const char *url, uint32_t video_width, uint32_t video_height);
 
-int rtmp_close(void ** handle);
+int rtmp_close(void * handle);
 
 int rtmp_is_connected(void *handle);
 

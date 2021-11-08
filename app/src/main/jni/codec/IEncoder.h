@@ -7,7 +7,6 @@
 
 #include "LiveMuxerInfo.h"
 #include "ATimestampBuffer.h"
-#include "ABufferCallback.h"
 class IEncoder {
 public:
     virtual bool init(LiveMuxerInfo & muxerInfo){};
@@ -15,6 +14,6 @@ public:
     virtual bool start(){};
     virtual bool stop(){};
     virtual bool sendBuffer(ATimestampBuffer &buffer){};
-    virtual bool receiveBuffer(ABufferCallback<ATimestampBuffer> *callback){};
+    virtual bool receiveBuffer(ATimestampBuffer &buffer){};
 };
 #endif //AALIVE_IENCODER_H

@@ -6,6 +6,7 @@
 #define AALIVE_MEDIACODECAACENCODER_H
 
 #include "IEncoder.h"
+#include "../buffer/ATimestampBuffer.h"
 #include <media/NdkMediaCodec.h>
 
 class MedaiCodecAACEncoder : public IEncoder{
@@ -17,7 +18,7 @@ public:
     bool start();
     bool stop();
     bool sendBuffer(ATimestampBuffer &buffer);
-    bool receiveBuffer(ABufferCallback<ATimestampBuffer> *callback);
+    bool receiveBuffer(ATimestampBuffer &buffer);
 
 private:
     LiveMuxerInfo muxerParam;

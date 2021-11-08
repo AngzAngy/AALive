@@ -6,24 +6,13 @@
 #define AALIVE_ATIMESTAMPBUFFER_H
 
 #include <cstdint>
-#include "ABuffer.h"
+#include "AAutoBuffer.h"
 
-class ATimestampBuffer : public ABuffer{
+class ATimestampBuffer : public AAutoBuffer{
 public:
     ATimestampBuffer():timestamp(0){
     }
-    ATimestampBuffer(int sizeBytes):timestamp(0){
-        buf = new uint8_t[sizeBytes];
-        if(buf) {
-            sizeInBytes = sizeBytes;
-        }
-    }
     ~ATimestampBuffer(){
-        if(buf) {
-            delete []buf;
-            buf = nullptr;
-            sizeInBytes = 0;
-        }
     }
     uint64_t timestamp;
 };
