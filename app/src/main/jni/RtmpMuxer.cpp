@@ -17,29 +17,34 @@ static bool frameCompare(AFrame* left, AFrame* right) {
     return false;
 }
 
-void RtmpMuxer::doPublish(void *userdata) {
-    RtmpMuxer *rtmpMuxer = (RtmpMuxer *)userdata;
-    if(!rtmpMuxer) {
-        return;
-    }
-    switch (rtmpMuxer->state) {
-        case PREPARED:
-            rtmpMuxer->doOpen();
-            LOGD("doPublish doOpen");
-            break;
-        case OPENING:
-            LOGD("mybug doWrite");
-            rtmpMuxer->doWrite();
-            LOGD("doPublish doWrite");
-            break;
-        case CLOSED:
-            LOGD("doPublish doClose in");
-            rtmpMuxer->doClose();
-            LOGD("doPublish doClose out");
-            break;
-        case ERROR:
-            LOGD("doPublish Error");
-            break;
+void* RtmpMuxer::doPublish(void *userdata) {
+    while(true) {
+        RtmpMuxer *rtmpMuxer = (RtmpMuxer *)userdata;
+        if(!rtmpMuxer) {
+            LOGE("doPublish rtmpMuxer null");
+            return nullptr;
+        }
+        LOGD("doPublish state: %d", rtmpMuxer->state);
+        switch (rtmpMuxer->state) {
+            case PREPARED:
+                LOGD("doPublish doOpen");
+                rtmpMuxer->doOpen();
+                break;
+            case OPENING:
+                LOGD("doPublish doWrite");
+                rtmpMuxer->doWrite();
+                break;
+//            case CLOSED:
+//                rtmpMuxer->doClose();
+//                LOGD("doPublish doClose out");
+//                return nullptr;
+//            case ERROR:
+//                LOGD("doPublish Error");
+//                return nullptr;
+//            case IDEL:
+//                LOGD("doPublish Idel");
+//                return nullptr;
+        }
     }
 }
 
@@ -53,6 +58,11 @@ RtmpMuxer::~RtmpMuxer(){
 };
 
 bool RtmpMuxer::open(const LiveMuxerInfo& muxerInfo) {
+    LOGD("%s",__FUNCTION__);
+    if(state == PREPARED || state == OPENING) {
+        LOGD("%s has opened",__FUNCTION__);
+        return true;
+    }
     mMuxerInfo = muxerInfo;
     mRtmpHandler = rtmp_sender_alloc();
     if(!mRtmpHandler) {
@@ -61,8 +71,7 @@ bool RtmpMuxer::open(const LiveMuxerInfo& muxerInfo) {
     }
     state = PREPARED;
 
-    ThreadCB cb = {RtmpMuxer::doPublish, this};
-    thread.start(cb);
+    pthread_create(&mThread, NULL, RtmpMuxer::doPublish, this);
     return true;
 }
 
@@ -109,16 +118,13 @@ void RtmpMuxer::backFrame(AFrame* pFrame) {
 }
 
 bool RtmpMuxer::writeFrame(AFrame* pFrame) {
-    LOGE("mybug writeFrame in");
+    AA::Lock lock(mFrameQMux);
     if(pFrame) {
-        mFrameQMux.lock();
         mFrameQueue.push_back(pFrame);
-        LOGE("mybug writeFrame size: %d",mFrameQueue.size());
-        mFrameQMux.unlock();
-        mFrameQCondition.signal();
+        LOGD("writeFrame size: %d",mFrameQueue.size());
+//        mFrameQCondition.signal();
         return true;
     }
-    LOGE("mybug writeFrame null");
     return false;
 }
 
@@ -139,45 +145,38 @@ bool RtmpMuxer::doOpen() {
 }
 
 bool RtmpMuxer::doWrite() {
-    LOGD("mybug 0");
-    if(isConnected()) {
-        LOGD("mybug 1");
-        AFrame *pFrame = nullptr;
-        mFrameQMux.lock();
-        if(mFrameQueue.empty()) {
-            LOGD("mybug 2");
+//    AA::Lock lock(mFrameQMux);
+//    if(isConnected()) {
+//        AFrame *pFrame = nullptr;
+//        if(mFrameQueue.empty()) {
 //            mFrameQCondition.wait(mFrameQMux);
-            return false;
-        }
-        LOGD("mybug 3");
-        if(!mFrameQueue.empty()) {
-            std::sort(mFrameQueue.begin(), mFrameQueue.end(), frameCompare);
+//        }
+//        if(!mFrameQueue.empty()) {
+//            std::sort(mFrameQueue.begin(), mFrameQueue.end(), frameCompare);
 
-            pFrame = mFrameQueue.front();
-            mFrameQueue.pop_front();
-        }
-        mFrameQMux.unlock();
+//            pFrame = mFrameQueue[0];
+//            mFrameQueue.erase(mFrameQueue.begin(), mFrameQueue.begin() + 1);
+//        }
 
-        LOGD("mybug 4");
-        if(pFrame && pFrame->buf) {
-            const uint8_t *buf = (const uint8_t *)pFrame->buf;
-            const int bufBytes = (const int)pFrame->sizeInBytes;
-            const uint64_t dtsUS = (const uint64_t)pFrame->timestamp;
-            switch (pFrame->type){
-                case AudioFrame:
-                    writeAudioFrame(buf, bufBytes, dtsUS);
-                    LOGD("mybug 5");
-                    break;
-                case VideoFrame:
-                    writeVideoFrame(buf, bufBytes, dtsUS);
-                    LOGD("mybug 6");
-                    break;
-                default:
-                    break;
-            }
-            backFrame(pFrame);
-        }
-    }
+//        if(pFrame && pFrame->buf) {
+//            LOGD("doWrite frameSize: %d", pFrame->sizeInBytes);
+//            switch (pFrame->type){
+//                case AudioFrame:
+//                    LOGD("mybug 50");
+//                    writeAudioFrame((uint8_t *)pFrame->buf, pFrame->sizeInBytes, pFrame->timestamp);
+//                    LOGD("mybug 5");
+//                    break;
+//                case VideoFrame:
+//                    LOGD("mybug 60");
+//                    writeVideoFrame((uint8_t *)pFrame->buf, pFrame->sizeInBytes, pFrame->timestamp);
+//                    LOGD("mybug 6");
+//                    break;
+//                default:
+//                    break;
+//            }
+//        }
+//        backFrame(pFrame);
+//    }
 }
 
 
@@ -187,20 +186,19 @@ bool RtmpMuxer::doClose() {
             rtmp_close(mRtmpHandler);
         }
         state = IDEL;
-        thread.stop();
     }
 }
 
-bool RtmpMuxer::writeVideoFrame(const uint8_t *buf, const int bufBytes, const uint64_t dtsUS) {
+bool RtmpMuxer::writeVideoFrame(uint8_t *buf, int bufBytes, uint64_t dtsUS) {
     if(mRtmpHandler) {
-        return 0 == rtmp_sender_write_video_frame(mRtmpHandler, (uint8_t *)buf, bufBytes, dtsUS, 0, 0);
+        return 0 == rtmp_sender_write_video_frame(mRtmpHandler, buf, bufBytes, dtsUS, 0, 0);
     }
     return false;
 }
 
-bool RtmpMuxer::writeAudioFrame(const uint8_t *buf, const int bufBytes, const uint64_t dtsUS) {
+bool RtmpMuxer::writeAudioFrame(uint8_t *buf, int bufBytes, uint64_t dtsUS) {
     if(mRtmpHandler) {
-        return 0 == rtmp_sender_write_audio_frame(mRtmpHandler, (uint8_t *)buf, bufBytes, dtsUS, 0);
+        return 0 == rtmp_sender_write_audio_frame(mRtmpHandler, buf, bufBytes, dtsUS, 0);
     }
     return false;
 }

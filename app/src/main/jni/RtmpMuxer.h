@@ -9,8 +9,8 @@
 #include "IRtmpMuxer.h"
 #include "AFramePool.h"
 #include "Mutex.h"
-#include "Thread.h"
-#include <deque>
+#include <pthread.h>
+#include <vector>
 enum MuxerState {
     IDEL,
     PREPARED,
@@ -34,20 +34,20 @@ public:
     void backFrame(AFrame* pFrame);
 
 private:
-    static void doPublish(void *userdata);
+    static void* doPublish(void *userdata);
     bool doOpen();
     bool doWrite();
     bool doClose();
-    bool writeVideoFrame(const uint8_t *buf, const int bufBytes, const uint64_t dtsUS);
-    bool writeAudioFrame(const uint8_t *buf, const int bufBytes, const uint64_t dtsUS);
+    bool writeVideoFrame(uint8_t *buf, int bufBytes, uint64_t dtsUS);
+    bool writeAudioFrame(uint8_t *buf, int bufBytes, uint64_t dtsUS);
     LiveMuxerInfo mMuxerInfo;
     void * mRtmpHandler;
     AFramePool *mFramePool;
     AA::Mutex mPoolMux;
-    deque<AFrame*> mFrameQueue;
+    vector<AFrame*> mFrameQueue;
     AA::Mutex mFrameQMux;
     AA::Condition mFrameQCondition;
-    Thread thread;
+    pthread_t  mThread;
     MuxerState state;
 };
 #endif //AALIVE_RTMPMUXER_H

@@ -165,8 +165,8 @@ bool MedaiCodecAACEncoder::receiveBuffer(ATimestampBuffer &buffer) {
             uint8_t *out_buf = AMediaCodec_getOutputBuffer(pMediaCodec, idx, &out_size);
             int adtsFrameBytes = info.size + ADTS_HEADER_BYTES;
             if(buffer.capacityInBytes < adtsFrameBytes || !buffer.buf) {
-                buffer.free();
-                buffer.alloc(adtsFrameBytes);
+                buffer.freeBuffer();
+                buffer.allocBuffer(adtsFrameBytes);
             }
             if(buffer.buf) {
                 buffer.sizeInBytes = adtsFrameBytes;
@@ -177,7 +177,7 @@ bool MedaiCodecAACEncoder::receiveBuffer(ATimestampBuffer &buffer) {
                 int adtsSamplerate = getADTSsamplerate(muxerParam.audioSampleRate);
                 addADtsHeader(in_buf, buffer.sizeInBytes, adtsSamplerate, muxerParam.audioChannelNumber);
 
-//                LOGE("recv audio size: %d,adts size: %d,smprate: %d, channel: %d",info.size, aTimestampBuffer->sizeInBytes, muxerParam.audioSampleRate, muxerParam.audioChannelNumber);
+                LOGE("recvadts size: %d",buffer.sizeInBytes);
 
                 memcpy(in_buf + ADTS_HEADER_BYTES, out_buf + info.offset, info.size);
 

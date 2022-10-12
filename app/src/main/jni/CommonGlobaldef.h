@@ -42,18 +42,4 @@ enum VideoPixelFormat {
 	FMT_NV21 = 26,  
 };
 
-class DefABufferAlloc : public ABufferAlloc{
-public:
-	void *alloc(int sizeInBytes){
-		return malloc(sizeInBytes);
-	}
-
-	void free(void *bufAddr){
-		if(bufAddr) {
-			free(bufAddr);
-		}
-	}
-};
-
-static DefABufferAlloc gDefABufferAlloc;
 #endif

@@ -10,7 +10,7 @@ AFrame* AFrame::allocFrame() {
 
 void AFrame::freeFrame(AFrame* pFrame) {
     if(pFrame) {
-        pFrame->free();
+        pFrame->freeBuffer();
         delete pFrame;
     }
 }

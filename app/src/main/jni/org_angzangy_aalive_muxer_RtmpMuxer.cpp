@@ -11,6 +11,7 @@
 #include "AudioRecord.h"
 #include "CommonGlobaldef.h"
 #include "TimeIndexCounter.h"
+#include "Thread.h"
 #include <cstdint>
 #include <fstream>
 
@@ -21,6 +22,7 @@
 class RtmpContext{
 public:
     static void onPCMCallback(void *buf, int32_t size, void* userData);
+    static void onAdtsCallback(void *userdata);
     RtmpContext();
     ~RtmpContext();
     bool open(LiveMuxerInfo &muxerInfo);
@@ -28,7 +30,7 @@ public:
     void receiveAdtsFrame();
     MedaiCodecAACEncoder aacEncoder;
     TimeIndexCounter aacDtsCounter;
-    Thread aacEncoderThread;
+    Thread adtsReceiveThread;
     AudioRecord *audioRecord;
     RtmpMuxer rtmpMuxer;
 #ifdef DUMP_ADTS
@@ -45,9 +47,15 @@ void RtmpContext::onPCMCallback(void *buf, int32_t size, void* userData) {
         buffer.sizeInBytes = size;
         buffer.buf = buf;
         pContext->aacEncoder.sendBuffer(buffer);
-
-        pContext->receiveAdtsFrame();
     }
+}
+
+void RtmpContext::onAdtsCallback(void *userdata) {
+//  LOGD("%s : receiveAdtsFrame", __FUNCTION__);
+  RtmpContext *pContext = (RtmpContext *)userdata;
+  if(pContext) {
+      pContext->receiveAdtsFrame();
+  }
 }
 
 RtmpContext::RtmpContext():audioRecord(nullptr){
@@ -68,13 +76,17 @@ bool RtmpContext::open(LiveMuxerInfo &muxerInfo) {
         audioRecord->setOnFrameCallback(RtmpContext::onPCMCallback, this);
         audioRecord->start();
 
+        ThreadCB threadCb;
+        threadCb.callback = RtmpContext::onAdtsCallback;
+        threadCb.opaque = this;
+        adtsReceiveThread.start(threadCb);
         return true;
     }
     return false;
 }
 
 RtmpContext::~RtmpContext() {
-    aacEncoderThread.stop();
+    adtsReceiveThread.stop();
     aacEncoder.release();
     if(audioRecord) {
         audioRecord->release();
@@ -86,47 +98,41 @@ RtmpContext::~RtmpContext() {
 
 void RtmpContext::receiveAdtsFrame() {
   AFrame *pFrame = rtmpMuxer.obtionFrame();
-  LOGE("mybug receiveAdtsFrame Frame: %p", pFrame);
   if(pFrame) {
-    pFrame->type = AudioFrame;
+      pFrame->type = AudioFrame;
 
-    pFrame->bufferAlloc = &gDefABufferAlloc;
+      bool  ret = aacEncoder.receiveBuffer(*pFrame);
 
-    aacEncoder.receiveBuffer(*pFrame);
+      if (ret && pFrame->sizeInBytes > 0 && pFrame->buf) {
+          aacDtsCounter.calcTotalTime(pFrame->timestamp);
+          pFrame->timestamp = aacDtsCounter.getTimeIndex();
+          #ifdef DUMP_ADTS
+          ofs.write((char*)(pFrame->buf), pFrame->sizeInBytes);
+          #endif
 
-    LOGE("mybug receiveAdtsFrame 0");
-    if (pFrame->sizeInBytes > 0 && pFrame->buf) {
-        aacDtsCounter.calcTotalTime(pFrame->timestamp);
-        pFrame->timestamp = aacDtsCounter.getTimeIndex();
-#ifdef DUMP_ADTS
-      ofs.write((char*)(pFrame->buf), pFrame->sizeInBytes);
-#endif
-
-        bool ret = rtmpMuxer.writeFrame(pFrame);
-//        LOGD("callback rtmpMuxerWriteAudio dts: %lld", dtsUS);
-//        LOGD("callback rtmpMuxerWriteAudio buf0: %02X, buf1: %02X", buf[0], buf[1]);
-    }
+          rtmpMuxer.writeFrame(pFrame);
+      } else {
+          rtmpMuxer.backFrame(pFrame);
+      }
   }
 }
 
 bool RtmpContext::receiveEncoderBuffer(void *buf, int sizeBytes, uint64_t timestamp, FrameType type) {
     AFrame *pF = rtmpMuxer.obtionFrame();
-  LOGE("mybug receiveEncoderBuffer Frame: %p", pF);
     if(pF) {
-      pF->type = type;
-      pF->timestamp = timestamp;
-      pF->bufferAlloc = &gDefABufferAlloc;
+        pF->type = type;
+        pF->timestamp = timestamp;
 
-      if(pF->capacityInBytes < sizeBytes || !pF->buf) {
-          pF->free();
-          pF->alloc(sizeBytes);
-      }
-      if(pF->buf) {
-        LOGE("mybug receiveEncoderBuffer 0");
-          pF->sizeInBytes = sizeBytes;
-          memcpy((pF->buf), buf, sizeBytes);
-          return rtmpMuxer.writeFrame(pF);
-      }
+        if(pF->capacityInBytes < sizeBytes || !pF->buf) {
+            pF->freeBuffer();
+            pF->allocBuffer(sizeBytes);
+        }
+        if(pF->buf) {
+            pF->sizeInBytes = sizeBytes;
+            memcpy((pF->buf), buf, sizeBytes);
+            return rtmpMuxer.writeFrame(pF);
+        }
+        rtmpMuxer.backFrame(pF);
     }
     return false;
 }
