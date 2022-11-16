@@ -11,10 +11,10 @@
 
 class IRtmpMuxer{
 public:
-    virtual bool open(const LiveMuxerInfo& muxerInfo){};
-    virtual bool writeFrame(AFrame* pFrame){};
-    virtual bool isConnected(){};
-    virtual bool close(){};
+    virtual bool open(const LiveMuxerInfo& muxerInfo){return false;};
+    virtual bool writeFrame(AFrame* pFrame){return false;};
+    virtual bool isConnected(){return false;};
+    virtual bool close(){return false;};
     virtual void release(){};
 };
 #endif //AALIVE_IRTMPMUXER_H

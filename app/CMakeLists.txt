@@ -98,11 +98,13 @@ add_library( # Sets the name of the library.
              src/main/jni/gpu/YuvConverter.cpp
              src/main/jni/CommonGlobaldef.cpp
              src/main/jni/Thread.cpp
+             src/main/jni/TimeUtils.cpp
              src/main/jni/codec/AFrame.cpp
              src/main/jni/codec/LiveMuxerInfo.cpp
              src/main/jni/codec/MediaCodecAACEncoder.cpp
              src/main/jni/FFRtmpMuxer.cpp
              src/main/jni/RtmpMuxer.cpp
+             src/main/jni/RtmpStream.cpp
              src/main/jni/H264Encoder.cpp
              src/main/jni/AACEncoder.cpp
              src/main/jni/LiveMuxer.cpp

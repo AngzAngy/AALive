@@ -107,6 +107,9 @@ public class AVCSurfaceEncoder{
                 encoderOutputBuffers = mediaCodec.getOutputBuffers();
             } else if (encoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                 // should happen before receiving buffers, and should only happen once
+//                MediaFormat outputFormat = mediaCodec.getOutputFormat();
+//                ByteBuffer spsBuf = outputFormat.getByteBuffer("csd-0");
+//                ByteBuffer ppsBuf = outputFormat.getByteBuffer("csd-1");
             } else if (encoderStatus >= 0) {
                 if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
                     if (!endOfStream) {

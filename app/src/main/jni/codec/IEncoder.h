@@ -9,11 +9,11 @@
 #include "ATimestampBuffer.h"
 class IEncoder {
 public:
-    virtual bool init(LiveMuxerInfo & muxerInfo){};
-    virtual bool release(){};
-    virtual bool start(){};
-    virtual bool stop(){};
-    virtual bool sendBuffer(ATimestampBuffer &buffer){};
-    virtual bool receiveBuffer(ATimestampBuffer &buffer){};
+    virtual bool init(LiveMuxerInfo & muxerInfo){return false;};
+    virtual bool release(){return false;};
+    virtual bool start(){return false;};
+    virtual bool stop(){return false;};
+    virtual bool sendBuffer(ATimestampBuffer &buffer){return false;};
+    virtual bool receiveBuffer(ATimestampBuffer &buffer){return false;};
 };
 #endif //AALIVE_IENCODER_H

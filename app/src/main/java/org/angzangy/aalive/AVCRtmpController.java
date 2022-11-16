@@ -12,7 +12,8 @@ public class AVCRtmpController extends AVCSenderController implements FrameRecei
     private String mUrl;
     private RtmpMuxer rtmpMuxer;
     private TimeIndexCounter timeIndexCounter;
-    private int index;
+    private Naul spsNaul;
+    private Naul ppsNaul;
     public AVCRtmpController(String url) {
         mUrl = url;
         timeIndexCounter = new TimeIndexCounter();
@@ -79,39 +80,13 @@ public class AVCRtmpController extends AVCSenderController implements FrameRecei
         return naul;
     }
 
-    private Naul spsNaul;
-    private Naul ppsNaul;
     @Override
     public void receive(ByteBuffer buffer, MediaCodec.BufferInfo bufferInfo) {
         timeIndexCounter.calcTotalTime(bufferInfo.presentationTimeUs);
         buffer.position(bufferInfo.offset);
         buffer.limit(bufferInfo.size);
-//        Naul naul = getNaul(buffer, 0);
-//        if(naul != null) {
-//            switch (naul.type) {
-////                case 5:
-////                    LogPrinter.e("mybug "+naul+
-////                            ",,isKey naul:" + ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0) + ",,totalBytes:"+(naul.totalBytes()+",,realSize:"+bufferInfo.size)+",,index:"+index);
-////                    break;
-//                case 7:
-//                    spsNaul = naul;
-//                    if(spsNaul.totalBytes() < bufferInfo.size) {
-//                        naul = getNaul(buffer, spsNaul.totalBytes());
-//                        if(naul != null && naul.type == 8) {
-//                            ppsNaul = naul;
-//
-//                            LogPrinter.e("javamybug [totalLen:" +bufferInfo.size+"]SPS[type:"+spsNaul.type+",strlen:"+spsNaul.startCodePrefixBytes+",totalLen:"+spsNaul.totalBytes()+"]PPS[type:"+ppsNaul.type+",strlen:"+ppsNaul.startCodePrefixBytes+",totalLen:"+ppsNaul.totalBytes()+"]");
-//                        }
-//                    }
-//                    break;
-//                case 8:
-//                    break;
-//                default:
-//            }
-//        }
-//        index ++;
         if(isConnected()) {
-            rtmpMuxer.writeVideo(buffer, 0, bufferInfo.size, timeIndexCounter.getTimeIndex());
+            rtmpMuxer.writeVideo(buffer, bufferInfo.offset, bufferInfo.size, timeIndexCounter.getTimeIndex());
         }
     }
 
